@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "1.0",
+  "entities": {
+    "users": {
+      "title": "Users",
+      "description": "User accounts and financial balances",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "phone": { "type": "string" },
+        "countryCode": { "type": "string" },
+        "email": { "type": "string" },
+        "balance": { "type": "number" },
+        "investment": { "type": "number" },
+        "todayProfit": { "type": "number" },
+        "totalProfit": { "type": "number" },
+        "vipLevel": { "type": "number" },
+        "isGrabActive": { "type": "boolean" },
+        "lastGrabTimestamp": { "type": "number", "nullable": true },
+        "grabEndTime": { "type": "number", "nullable": true },
+        "referralCode": { "type": "string" },
+        "referredByCode": { "type": "string", "nullable": true },
+        "directMembersCount": { "type": "number" },
+        "teamMembersCount": { "type": "number" },
+        "teamDeposit": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "fundPasswordSet": { "type": "boolean" },
+        "passwordHash": { "type": "string" },
+        "fundPasswordHash": { "type": "string", "nullable": true }
+      },
+      "required": ["id", "username", "phone", "countryCode", "email", "balance", "investment", "vipLevel", "referralCode", "status", "createdAt", "passwordHash"]
+    },
+    "admins": {
+      "title": "Admins",
+      "description": "Admin users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "role": { "type": "string" },
+        "lastLogin": { "type": "string", "nullable": true }
+      },
+      "required": ["id", "username", "passwordHash", "role"]
+    },
+    "rechargeRequests": {
+      "title": "Recharge Requests",
+      "description": "Deposit requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "amount": { "type": "number" },
+        "network": { "type": "string" },
+        "txid": { "type": "string" },
+        "screenshotUrl": { "type": "string", "nullable": true },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "processedAt": { "type": "string", "nullable": true },
+        "adminNote": { "type": "string", "nullable": true }
+      },
+      "required": ["id", "userId", "userPhone", "amount", "network", "txid", "status", "createdAt"]
+    },
+    "withdrawalRequests": {
+      "title": "Withdrawal Requests",
+      "description": "Withdrawal requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "amount": { "type": "number" },
+        "fee": { "type": "number" },
+        "netAmount": { "type": "number" },
+        "network": { "type": "string" },
+        "walletAddress": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "processedAt": { "type": "string", "nullable": true },
+        "adminNote": { "type": "string", "nullable": true }
+      },
+      "required": ["id", "userId", "userPhone", "amount", "fee", "netAmount", "network", "walletAddress", "status", "createdAt"]
+    },
+    "transactions": {
+      "title": "Transactions",
+      "description": "User transaction history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "balanceAfter": { "type": "number" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "type", "amount", "balanceAfter", "description", "status", "createdAt"]
+    },
+    "announcements": {
+      "title": "Announcements",
+      "description": "System announcements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "isImportant": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "content", "createdAt"]
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "System settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "minInvestment": { "type": "number" },
+        "minWithdrawal": { "type": "number" },
+        "withdrawalFeePercent": { "type": "number" },
+        "usdtBep20Address": { "type": "string" },
+        "usdtTrc20Address": { "type": "string" },
+        "allowCustomReferral": { "type": "boolean" },
+        "captchaEnabled": { "type": "boolean" },
+        "announcementText": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" }
+      },
+      "required": ["id", "minInvestment", "minWithdrawal", "withdrawalFeePercent", "usdtBep20Address", "usdtTrc20Address"]
+    }
+  }
+}

@@ -1,0 +1,501 @@
+{
+  "schemaVersion": 2,
+  "lastBackupAt": "2026-08-05T07:17:20.787Z",
+  "users": [
+    {
+      "id": "usr_17859142402543ap",
+      "username": "Member_3939",
+      "phone": "5553939",
+      "countryCode": "+1",
+      "email": "user_5553939@nexgrab.net",
+      "balance": 500,
+      "investment": 500,
+      "todayProfit": 0,
+      "totalProfit": 0,
+      "vipLevel": 1,
+      "isGrabActive": true,
+      "lastGrabTimestamp": 1785914240641,
+      "grabEndTime": 1785914300641,
+      "referralCode": "NG189567",
+      "referredByCode": null,
+      "directMembersCount": 1,
+      "teamMembersCount": 1,
+      "teamDeposit": 0,
+      "status": "active",
+      "createdAt": "2026-08-05T07:17:20.254Z",
+      "fundPasswordSet": true,
+      "passwordHash": "$2b$10$WGGFRHfg/IPOCBNB0e5K0OXornxGi02WbSmZr4e2bKiVLvTVedhHa",
+      "fundPasswordHash": "$2b$10$jgPi42pnboCLb3yaQ4bFp.mRBMAdlCwLVgIr7VsEea9Zdh0VQHjPq"
+    },
+    {
+      "id": "usr_17859142404771su",
+      "username": "Member_9801",
+      "phone": "5559801",
+      "countryCode": "+1",
+      "email": "user_5559801@nexgrab.net",
+      "balance": 0,
+      "investment": 0,
+      "todayProfit": 0,
+      "totalProfit": 0,
+      "vipLevel": 1,
+      "isGrabActive": false,
+      "lastGrabTimestamp": null,
+      "grabEndTime": null,
+      "referralCode": "NG314124",
+      "referredByCode": "NG189567",
+      "directMembersCount": 0,
+      "teamMembersCount": 0,
+      "teamDeposit": 0,
+      "status": "active",
+      "createdAt": "2026-08-05T07:17:20.477Z",
+      "fundPasswordSet": true,
+      "passwordHash": "$2b$10$AytUp4ctHFByw8ACapq8p.32x87C.Afra69BksVZkKvP80w8awKFa",
+      "fundPasswordHash": "$2b$10$2r4QeKNaX5z/KIS6Y/PN3OZKpOLNWidJ78NCMimU9LHcOPngg5P6G"
+    },
+    {
+      "id": "usr_1785919994521gof",
+      "username": "Member_4704",
+      "phone": "3037104704",
+      "countryCode": "+92",
+      "email": "shanibhi@gmail.com",
+      "balance": 0,
+      "investment": 0,
+      "todayProfit": 0,
+      "totalProfit": 0,
+      "vipLevel": 1,
+      "isGrabActive": false,
+      "lastGrabTimestamp": null,
+      "grabEndTime": null,
+      "referralCode": "NG883138",
+      "referredByCode": null,
+      "directMembersCount": 0,
+      "teamMembersCount": 0,
+      "teamDeposit": 0,
+      "status": "active",
+      "createdAt": "2026-08-05T08:53:14.521Z",
+      "fundPasswordSet": true,
+      "passwordHash": "$2b$10$MFLkZuq/ExOKdYcwu5O2.OWH4cQvgvMZMiGu6xaXBniciT8vtQQH2",
+      "fundPasswordHash": "$2b$10$zbT9RenpVdgKyiWn2ChK2.rxrG0zipzA7jodjN/ZytgLCuVpBLvTS"
+    },
+    {
+      "id": "usr_1785921283263xkf",
+      "username": "Member_0199",
+      "phone": "5550199",
+      "countryCode": "+1",
+      "email": "testaudit@mngfilm.com",
+      "balance": 80,
+      "investment": 100,
+      "todayProfit": 0,
+      "totalProfit": 0,
+      "vipLevel": 1,
+      "isGrabActive": false,
+      "lastGrabTimestamp": null,
+      "grabEndTime": null,
+      "referralCode": "NG131938",
+      "referredByCode": null,
+      "directMembersCount": 0,
+      "teamMembersCount": 0,
+      "teamDeposit": 0,
+      "status": "active",
+      "createdAt": "2026-08-05T09:14:43.263Z",
+      "fundPasswordSet": true,
+      "passwordHash": "$2b$10$bCcxDTMj1aFdBEj/17psjOaICy3yg8Wp5xHXaW5dLFiGBFNyXFNwC",
+      "fundPasswordHash": "$2b$10$oFpxIfkBt/vicrko9BoyWemy7iy6N0VQ3JlMUvCikhOaoEuJ2c7We"
+    }
+  ],
+  "admins": [
+    {
+      "lastLogin": "2026-08-05T07:17:20.019Z",
+      "role": "superadmin",
+      "username": "admin",
+      "id": "admin_1",
+      "passwordHash": "$2b$10$FIsKZeH6ECY3qvV2dX3xZeJQ6/JsC0PJew3k6C7s/lI2D.h0r56Nu"
+    },
+    {
+      "id": "admin_hasnain",
+      "role": "superadmin",
+      "passwordHash": "$2b$10$Wj0o/o/kxXOaZ40thXVNW.sBeiepS3aQDw7Gqezpqz/LDI59vfnpu",
+      "lastLogin": "2026-08-05T09:15:00.053Z",
+      "username": "hasnainnazz"
+    }
+  ],
+  "rechargeRequests": [
+    {
+      "id": "rec_1785921299953",
+      "userId": "usr_1785921283263xkf",
+      "username": "Member_0199",
+      "userPhone": "+15550199",
+      "amount": 100,
+      "network": "USDT_BEP20",
+      "txid": "0x1234567890abcdef1234567890abcdef",
+      "proofUrl": "",
+      "status": "approved",
+      "createdAt": "2026-08-05T09:14:59.953Z",
+      "adminNote": "Approved in automated audit",
+      "processedAt": "2026-08-05T09:15:00.067Z"
+    },
+    {
+      "userPhone": "+15553939",
+      "proofUrl": "",
+      "adminNote": "Deposit verified on blockchain",
+      "processedAt": "2026-08-05T07:17:20.628Z",
+      "txid": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "userId": "usr_17859142402543ap",
+      "username": "Member_3939",
+      "createdAt": "2026-08-05T07:17:20.620Z",
+      "id": "rec_1785914240620",
+      "network": "USDT_BEP20",
+      "status": "approved",
+      "amount": 500
+    }
+  ],
+  "withdrawalRequests": [
+    {
+      "id": "wd_1785921300176",
+      "userId": "usr_1785921283263xkf",
+      "username": "Member_0199",
+      "userPhone": "+15550199",
+      "amount": 20,
+      "fee": 1.6,
+      "netAmount": 18.4,
+      "network": "USDT_BEP20",
+      "walletAddress": "0xabcdef1234567890abcdef1234567890",
+      "status": "pending",
+      "createdAt": "2026-08-05T09:15:00.176Z"
+    },
+    {
+      "adminNote": "Test rejection - refunding wallet",
+      "userPhone": "+15553939",
+      "netAmount": 46,
+      "walletAddress": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "status": "rejected",
+      "fee": 4,
+      "amount": 50,
+      "username": "Member_3939",
+      "createdAt": "2026-08-05T07:17:20.761Z",
+      "network": "USDT_TRC20",
+      "id": "wd_1785914240761",
+      "processedAt": "2026-08-05T07:17:20.773Z",
+      "userId": "usr_17859142402543ap"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_1785921300176",
+      "userId": "usr_1785921283263xkf",
+      "type": "withdrawal",
+      "amount": -20,
+      "balanceAfter": 80,
+      "description": "Withdrawal Request 20 USDT (Fee: 1.6 USDT)",
+      "status": "pending",
+      "createdAt": "2026-08-05T09:15:00.176Z"
+    },
+    {
+      "id": "tx_1785921300067",
+      "userId": "usr_1785921283263xkf",
+      "type": "recharge",
+      "amount": 100,
+      "balanceAfter": 100,
+      "description": "USDT Recharge (USDT_BEP20) Approved",
+      "status": "completed",
+      "createdAt": "2026-08-05T09:15:00.067Z"
+    },
+    {
+      "id": "tx_1785914240773",
+      "userId": "usr_17859142402543ap",
+      "balanceAfter": 500,
+      "createdAt": "2026-08-05T07:17:20.773Z",
+      "description": "Withdrawal Refund (50 USDT) - Request Rejected",
+      "amount": 50,
+      "type": "withdrawal",
+      "status": "completed"
+    },
+    {
+      "status": "pending",
+      "balanceAfter": 450,
+      "type": "withdrawal",
+      "description": "Withdrawal Request 50 USDT (Fee: 4 USDT)",
+      "userId": "usr_17859142402543ap",
+      "createdAt": "2026-08-05T07:17:20.761Z",
+      "id": "tx_1785914240761",
+      "amount": -50
+    },
+    {
+      "createdAt": "2026-08-05T07:17:20.628Z",
+      "status": "completed",
+      "description": "USDT Recharge (USDT_BEP20) Approved",
+      "id": "tx_1785914240628",
+      "balanceAfter": 500,
+      "userId": "usr_17859142402543ap",
+      "amount": 500,
+      "type": "recharge"
+    }
+  ],
+  "grabLogs": [],
+  "announcements": [
+    {
+      "content": "Experience secure, server-verified 24-hour order matching cycles with up to 5% daily profit tiers.",
+      "createdAt": "2026-08-05T06:20:27.146Z",
+      "title": "Welcome to NexGrab Order Matching Platform",
+      "id": "ann_1",
+      "isImportant": true
+    },
+    {
+      "id": "ann_2",
+      "isImportant": false,
+      "createdAt": "2026-08-05T06:20:27.146Z",
+      "content": "Deposits are processed securely via admin verification. Minimum deposit is 20 USDT.",
+      "title": "USDT BEP20 & TRC20 Deposit Channels Live"
+    }
+  ],
+  "banners": [
+    {
+      "id": "b1",
+      "title": "Automated Global Order Matching Engine",
+      "imageUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1200&q=80",
+      "active": true
+    },
+    {
+      "id": "b2",
+      "title": "Tiered VIP Earnings Up to 5% Daily",
+      "imageUrl": "https://images.unsplash.com/photo-1642543492481-44e81e3914a7?auto=format&fit=crop&w=1200&q=80",
+      "active": true
+    }
+  ],
+  "supportTickets": [],
+  "notifications": [
+    {
+      "id": "notif_1785921300068",
+      "userId": "usr_1785921283263xkf",
+      "title": "Recharge Approved!",
+      "message": "Your deposit of 100 USDT via USDT_BEP20 has been approved and credited.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-08-05T09:15:00.068Z"
+    },
+    {
+      "id": "notif_1785914240774",
+      "userId": "usr_17859142402543ap",
+      "title": "Withdrawal Rejected & Refunded",
+      "message": "Your withdrawal request of 50 USDT was rejected and refunded. Reason: Test rejection - refunding wallet.",
+      "type": "error",
+      "isRead": false,
+      "createdAt": "2026-08-05T07:17:20.774Z"
+    },
+    {
+      "id": "notif_1785914240629",
+      "userId": "usr_17859142402543ap",
+      "title": "Recharge Approved!",
+      "message": "Your deposit of 500 USDT via USDT_BEP20 has been approved and credited.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-08-05T07:17:20.629Z"
+    },
+    {
+      "id": "notif_1785914240478oip",
+      "userId": "usr_17859142402543ap",
+      "title": "New Member Joined!",
+      "message": "User 555***01 registered using your referral code.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-08-05T07:17:20.478Z"
+    }
+  ],
+  "settings": {
+    "minInvestment": 20,
+    "minWithdrawal": 10,
+    "withdrawalFeePercent": 8,
+    "usdtBep20Address": "0xbd63907b714a667f5052c432cdc4ad3dc0d73658",
+    "usdtTrc20Address": "TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy",
+    "allowCustomReferral": false,
+    "captchaEnabled": true,
+    "announcementText": "System status: Normal operations. Order matching cycle 24 hours.",
+    "maintenanceMode": false
+  },
+  "activityLogs": [
+    {
+      "id": "act_1785921300177rzn",
+      "actor": "USER:usr_1785921283263xkf",
+      "action": "WITHDRAW_SUBMIT",
+      "details": "Submitted withdrawal request 20 USDT",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:15:00.177Z"
+    },
+    {
+      "id": "act_1785921300068dz4",
+      "actor": "ADMIN:hasnainnazz",
+      "action": "RECHARGE_PROCESSED",
+      "details": "APPROVED recharge rec_1785921299953",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:15:00.069Z"
+    },
+    {
+      "id": "act_1785921300054roy",
+      "actor": "ADMIN:hasnainnazz",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:15:00.054Z"
+    },
+    {
+      "id": "act_1785921299954gn2",
+      "actor": "USER:usr_1785921283263xkf",
+      "action": "RECHARGE_SUBMIT",
+      "details": "Submitted deposit request 100 USDT via USDT_BEP20",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:14:59.954Z"
+    },
+    {
+      "id": "act_17859212999360t4",
+      "actor": "USER:usr_1785921283263xkf",
+      "action": "LOGIN",
+      "details": "User logged in",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:14:59.936Z"
+    },
+    {
+      "id": "act_1785921292435yzm",
+      "actor": "USER:usr_1785921283263xkf",
+      "action": "LOGIN",
+      "details": "User logged in",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:14:52.435Z"
+    },
+    {
+      "id": "act_1785921289254ewj",
+      "actor": "ADMIN:hasnainnazz",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:14:49.254Z"
+    },
+    {
+      "id": "act_1785921286317trx",
+      "actor": "USER:usr_1785921283263xkf",
+      "action": "LOGIN",
+      "details": "User logged in",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:14:46.317Z"
+    },
+    {
+      "id": "act_17859212832684zh",
+      "actor": "USER:usr_1785921283263xkf",
+      "action": "REGISTER",
+      "details": "New user registered with phone +15550199",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T09:14:43.268Z"
+    },
+    {
+      "id": "act_1785919994525k0v",
+      "actor": "USER:usr_1785919994521gof",
+      "action": "REGISTER",
+      "details": "New user registered with phone +923037104704",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T08:53:14.525Z"
+    },
+    {
+      "id": "act_1785916059800roy",
+      "actor": "ADMIN:hasnainnazz",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:47:39.800Z"
+    },
+    {
+      "id": "act_1785914240900rkn",
+      "actor": "ADMIN:admin",
+      "action": "DB_BACKUP_RESTORE",
+      "details": "Restored database from snapshot db-manualbackup-2026-08-05T07-17-20-787Z.json",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.900Z"
+    },
+    {
+      "id": "act_1785914240775mjj",
+      "actor": "ADMIN:admin",
+      "action": "WITHDRAWAL_PROCESSED",
+      "details": "REJECTED withdrawal wd_1785914240761",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.775Z"
+    },
+    {
+      "id": "act_17859142407624p4",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "WITHDRAW_SUBMIT",
+      "details": "Submitted withdrawal request 50 USDT",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.762Z"
+    },
+    {
+      "id": "act_1785914240642hae",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "GRAB_START",
+      "details": "Started order grab cycle",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.642Z"
+    },
+    {
+      "id": "act_1785914240629nrg",
+      "actor": "ADMIN:admin",
+      "action": "RECHARGE_PROCESSED",
+      "details": "APPROVED recharge rec_1785914240620",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.630Z"
+    },
+    {
+      "id": "act_1785914240620h23",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "RECHARGE_SUBMIT",
+      "details": "Submitted deposit request 500 USDT via USDT_BEP20",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.620Z"
+    },
+    {
+      "id": "act_1785914240603xrn",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "LOGIN",
+      "details": "User logged in",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.603Z"
+    },
+    {
+      "id": "act_1785914240479b05",
+      "actor": "USER:usr_17859142404771su",
+      "action": "REGISTER",
+      "details": "New user registered with phone +15559801",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.479Z"
+    },
+    {
+      "id": "act_1785914240256qfm",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "REGISTER",
+      "details": "New user registered with phone +15553939",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.256Z"
+    },
+    {
+      "id": "act_1785914240020c2g",
+      "actor": "ADMIN:admin",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.020Z"
+    },
+    {
+      "id": "act_1785914205481fho",
+      "actor": "ADMIN:admin",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:16:45.481Z"
+    },
+    {
+      "id": "log_init",
+      "actor": "SYSTEM",
+      "action": "INIT",
+      "details": "NexGrab Database initialized successfully.",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T06:20:27.146Z"
+    }
+  ]
+}

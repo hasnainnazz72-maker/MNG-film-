@@ -1,0 +1,6 @@
+{
+  "name": "MNG FILM",
+  "description": "MNG FILM official platform for film investment, box office funding, and quantitative yield order grabbing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

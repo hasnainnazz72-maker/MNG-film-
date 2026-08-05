@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 2,
+  "lastBackupAt": "2026-08-05T07:17:20.787Z",
+  "users": [
+    {
+      "id": "usr_17859142402543ap",
+      "username": "Member_3939",
+      "phone": "5553939",
+      "countryCode": "+1",
+      "email": "user_5553939@nexgrab.net",
+      "balance": 500,
+      "investment": 500,
+      "todayProfit": 0,
+      "totalProfit": 0,
+      "vipLevel": 1,
+      "isGrabActive": true,
+      "lastGrabTimestamp": 1785914240641,
+      "grabEndTime": 1785914300641,
+      "referralCode": "NG189567",
+      "referredByCode": null,
+      "directMembersCount": 1,
+      "teamMembersCount": 1,
+      "teamDeposit": 0,
+      "status": "active",
+      "createdAt": "2026-08-05T07:17:20.254Z",
+      "fundPasswordSet": true,
+      "passwordHash": "$2b$10$WGGFRHfg/IPOCBNB0e5K0OXornxGi02WbSmZr4e2bKiVLvTVedhHa",
+      "fundPasswordHash": "$2b$10$jgPi42pnboCLb3yaQ4bFp.mRBMAdlCwLVgIr7VsEea9Zdh0VQHjPq"
+    },
+    {
+      "id": "usr_17859142404771su",
+      "username": "Member_9801",
+      "phone": "5559801",
+      "countryCode": "+1",
+      "email": "user_5559801@nexgrab.net",
+      "balance": 0,
+      "investment": 0,
+      "todayProfit": 0,
+      "totalProfit": 0,
+      "vipLevel": 1,
+      "isGrabActive": false,
+      "lastGrabTimestamp": null,
+      "grabEndTime": null,
+      "referralCode": "NG314124",
+      "referredByCode": "NG189567",
+      "directMembersCount": 0,
+      "teamMembersCount": 0,
+      "teamDeposit": 0,
+      "status": "active",
+      "createdAt": "2026-08-05T07:17:20.477Z",
+      "fundPasswordSet": true,
+      "passwordHash": "$2b$10$AytUp4ctHFByw8ACapq8p.32x87C.Afra69BksVZkKvP80w8awKFa",
+      "fundPasswordHash": "$2b$10$2r4QeKNaX5z/KIS6Y/PN3OZKpOLNWidJ78NCMimU9LHcOPngg5P6G"
+    }
+  ],
+  "admins": [
+    {
+      "passwordHash": "$2b$10$FIsKZeH6ECY3qvV2dX3xZeJQ6/JsC0PJew3k6C7s/lI2D.h0r56Nu",
+      "role": "superadmin",
+      "username": "admin",
+      "id": "admin_1",
+      "lastLogin": "2026-08-05T07:17:20.019Z"
+    }
+  ],
+  "rechargeRequests": [
+    {
+      "id": "rec_1785914240620",
+      "userId": "usr_17859142402543ap",
+      "username": "Member_3939",
+      "userPhone": "+15553939",
+      "amount": 500,
+      "network": "USDT_BEP20",
+      "txid": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "proofUrl": "",
+      "status": "approved",
+      "createdAt": "2026-08-05T07:17:20.620Z",
+      "adminNote": "Deposit verified on blockchain",
+      "processedAt": "2026-08-05T07:17:20.628Z"
+    }
+  ],
+  "withdrawalRequests": [
+    {
+      "id": "wd_1785914240761",
+      "userId": "usr_17859142402543ap",
+      "username": "Member_3939",
+      "userPhone": "+15553939",
+      "amount": 50,
+      "fee": 4,
+      "netAmount": 46,
+      "network": "USDT_TRC20",
+      "walletAddress": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "status": "rejected",
+      "createdAt": "2026-08-05T07:17:20.761Z",
+      "adminNote": "Test rejection - refunding wallet",
+      "processedAt": "2026-08-05T07:17:20.773Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_1785914240773",
+      "userId": "usr_17859142402543ap",
+      "type": "withdrawal",
+      "amount": 50,
+      "balanceAfter": 500,
+      "description": "Withdrawal Refund (50 USDT) - Request Rejected",
+      "status": "completed",
+      "createdAt": "2026-08-05T07:17:20.773Z"
+    },
+    {
+      "id": "tx_1785914240761",
+      "userId": "usr_17859142402543ap",
+      "type": "withdrawal",
+      "amount": -50,
+      "balanceAfter": 450,
+      "description": "Withdrawal Request 50 USDT (Fee: 4 USDT)",
+      "status": "pending",
+      "createdAt": "2026-08-05T07:17:20.761Z"
+    },
+    {
+      "id": "tx_1785914240628",
+      "userId": "usr_17859142402543ap",
+      "type": "recharge",
+      "amount": 500,
+      "balanceAfter": 500,
+      "description": "USDT Recharge (USDT_BEP20) Approved",
+      "status": "completed",
+      "createdAt": "2026-08-05T07:17:20.628Z"
+    }
+  ],
+  "grabLogs": [],
+  "announcements": [
+    {
+      "isImportant": true,
+      "title": "Welcome to NexGrab Order Matching Platform",
+      "id": "ann_1",
+      "createdAt": "2026-08-05T06:20:27.146Z",
+      "content": "Experience secure, server-verified 24-hour order matching cycles with up to 5% daily profit tiers."
+    },
+    {
+      "isImportant": false,
+      "content": "Deposits are processed securely via admin verification. Minimum deposit is 20 USDT.",
+      "createdAt": "2026-08-05T06:20:27.146Z",
+      "title": "USDT BEP20 & TRC20 Deposit Channels Live",
+      "id": "ann_2"
+    }
+  ],
+  "banners": [
+    {
+      "id": "b1",
+      "title": "Automated Global Order Matching Engine",
+      "imageUrl": "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1200&q=80",
+      "active": true
+    },
+    {
+      "id": "b2",
+      "title": "Tiered VIP Earnings Up to 5% Daily",
+      "imageUrl": "https://images.unsplash.com/photo-1642543492481-44e81e3914a7?auto=format&fit=crop&w=1200&q=80",
+      "active": true
+    }
+  ],
+  "supportTickets": [],
+  "notifications": [
+    {
+      "id": "notif_1785914240774",
+      "userId": "usr_17859142402543ap",
+      "title": "Withdrawal Rejected & Refunded",
+      "message": "Your withdrawal request of 50 USDT was rejected and refunded. Reason: Test rejection - refunding wallet.",
+      "type": "error",
+      "isRead": false,
+      "createdAt": "2026-08-05T07:17:20.774Z"
+    },
+    {
+      "id": "notif_1785914240629",
+      "userId": "usr_17859142402543ap",
+      "title": "Recharge Approved!",
+      "message": "Your deposit of 500 USDT via USDT_BEP20 has been approved and credited.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-08-05T07:17:20.629Z"
+    },
+    {
+      "id": "notif_1785914240478oip",
+      "userId": "usr_17859142402543ap",
+      "title": "New Member Joined!",
+      "message": "User 555***01 registered using your referral code.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-08-05T07:17:20.478Z"
+    }
+  ],
+  "settings": {
+    "minInvestment": 20,
+    "minWithdrawal": 10,
+    "withdrawalFeePercent": 8,
+    "usdtBep20Address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+    "usdtTrc20Address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+    "allowCustomReferral": false,
+    "captchaEnabled": true,
+    "announcementText": "System status: Normal operations. Order matching cycle 24 hours.",
+    "maintenanceMode": false
+  },
+  "activityLogs": [
+    {
+      "id": "act_1785914240775mjj",
+      "actor": "ADMIN:admin",
+      "action": "WITHDRAWAL_PROCESSED",
+      "details": "REJECTED withdrawal wd_1785914240761",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.775Z"
+    },
+    {
+      "id": "act_17859142407624p4",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "WITHDRAW_SUBMIT",
+      "details": "Submitted withdrawal request 50 USDT",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.762Z"
+    },
+    {
+      "id": "act_1785914240642hae",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "GRAB_START",
+      "details": "Started order grab cycle",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.642Z"
+    },
+    {
+      "id": "act_1785914240629nrg",
+      "actor": "ADMIN:admin",
+      "action": "RECHARGE_PROCESSED",
+      "details": "APPROVED recharge rec_1785914240620",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.630Z"
+    },
+    {
+      "id": "act_1785914240620h23",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "RECHARGE_SUBMIT",
+      "details": "Submitted deposit request 500 USDT via USDT_BEP20",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.620Z"
+    },
+    {
+      "id": "act_1785914240603xrn",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "LOGIN",
+      "details": "User logged in",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.603Z"
+    },
+    {
+      "id": "act_1785914240479b05",
+      "actor": "USER:usr_17859142404771su",
+      "action": "REGISTER",
+      "details": "New user registered with phone +15559801",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.479Z"
+    },
+    {
+      "id": "act_1785914240256qfm",
+      "actor": "USER:usr_17859142402543ap",
+      "action": "REGISTER",
+      "details": "New user registered with phone +15553939",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.256Z"
+    },
+    {
+      "id": "act_1785914240020c2g",
+      "actor": "ADMIN:admin",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:17:20.020Z"
+    },
+    {
+      "id": "act_1785914205481fho",
+      "actor": "ADMIN:admin",
+      "action": "ADMIN_LOGIN",
+      "details": "Admin logged into control center",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T07:16:45.481Z"
+    },
+    {
+      "id": "log_init",
+      "actor": "SYSTEM",
+      "action": "INIT",
+      "details": "NexGrab Database initialized successfully.",
+      "ip": "127.0.0.1",
+      "createdAt": "2026-08-05T06:20:27.146Z"
+    }
+  ]
+}
