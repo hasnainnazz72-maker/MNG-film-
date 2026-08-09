@@ -41,7 +41,8 @@ export const VIP_PLANS: VIPPlan[] = [
   { level: 5, name: 'VIP 5 Tier', minInvestment: 50000, maxInvestment: 200000, dailyProfitPercent: 5.0, reqDirectMembers: 100 },
 ];
 
-export type NetworkType = 'USDT_BEP20' | 'USDT_TRC20';
+export type NetworkType = 'USDT_BEP20' | 'USDT_TRC20' | 'ETB_BANK';
+export type PaymentMethodType = 'USDT_BEP20' | 'USDT_TRC20' | 'ETB_BANK';
 
 export interface RechargeRequest {
   id: string;
@@ -50,7 +51,10 @@ export interface RechargeRequest {
   userPhone: string;
   amount: number;
   network: NetworkType;
+  paymentMethod?: PaymentMethodType;
+  currency?: 'USDT' | 'ETB';
   txid: string;
+  transactionReference?: string;
   proofUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
   adminNote?: string;
@@ -67,7 +71,13 @@ export interface WithdrawalRequest {
   fee: number; // 8% fee
   netAmount: number;
   network: NetworkType;
+  paymentMethod?: PaymentMethodType;
+  currency?: 'USDT' | 'ETB';
   walletAddress: string;
+  bankName?: string;
+  accountHolderName?: string;
+  accountNumber?: string;
+  branch?: string;
   status: 'pending' | 'approved' | 'rejected';
   adminNote?: string;
   createdAt: string;
@@ -149,6 +159,10 @@ export interface SystemSettings {
   withdrawalFeePercent: number;
   usdtBep20Address: string;
   usdtTrc20Address: string;
+  etbCbeBankName?: string;
+  etbCbeAccountName?: string;
+  etbCbeAccountNumber?: string;
+  ethiopianBanks?: string[];
   allowCustomReferral: boolean;
   captchaEnabled: boolean;
   announcementText: string;

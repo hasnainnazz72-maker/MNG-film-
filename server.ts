@@ -4,7 +4,7 @@ import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { db, VIP_PLANS } from './src/server/db.js';
-import { NetworkType } from './src/types.js';
+import { NetworkType, PaymentMethodType } from './src/types.js';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -311,43 +311,86 @@ app.get('/api/grab/status', authenticateUserToken, (req: AuthenticatedRequest, r
 // Submit Recharge Request
 app.post('/api/wallet/recharge', authenticateUserToken, (req: AuthenticatedRequest, res) => {
   try {
-    const { amount, network, txid, proofUrl } = req.body;
+    const { amount, network, paymentMethod, txid, transactionReference, proofUrl } = req.body;
     const user = db.getUserById(req.userId!);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    const selectedMethod = (paymentMethod || network || '').toString().trim();
+    const isEtb = selectedMethod === 'ETB_BANK';
+
+    if (!isEtb && selectedMethod !== 'USDT_BEP20' && selectedMethod !== 'USDT_TRC20') {
+      return res.status(400).json({ error: 'Invalid payment method selected.' });
+    }
+
     const numAmount = Number(amount);
-    if (!numAmount || numAmount < 20) {
-      return res.status(400).json({ error: 'Minimum deposit amount is 20 USDT.' });
+    if (isEtb) {
+      if (!numAmount || numAmount <= 0) {
+        return res.status(400).json({ error: 'Please enter a valid ETB recharge amount.' });
+      }
+      const refNo = (transactionReference || txid || '').toString().trim();
+      if (!refNo || refNo.length < 3) {
+        return res.status(400).json({ error: 'Transaction / Reference Number is required for ETB Bank Transfer.' });
+      }
+      if (!proofUrl || !proofUrl.trim()) {
+        return res.status(400).json({ error: 'Payment Proof / Screenshot is required before submitting ETB Recharge.' });
+      }
+
+      const recharge = db.addRecharge({
+        id: 'rec_' + Date.now(),
+        userId: user.id,
+        username: user.username,
+        userPhone: `${user.countryCode}${user.phone}`,
+        amount: numAmount,
+        network: 'ETB_BANK',
+        paymentMethod: 'ETB_BANK',
+        currency: 'ETB',
+        txid: refNo,
+        transactionReference: refNo,
+        proofUrl: proofUrl.trim(),
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+
+      db.logActivity(`USER:${user.id}`, 'RECHARGE_SUBMIT', `Submitted ETB recharge request ${numAmount} ETB (Ref: ${refNo})`);
+
+      return res.json({
+        success: true,
+        recharge,
+        message: 'ETB Recharge request submitted successfully. Awaiting admin verification.',
+      });
+    } else {
+      if (!numAmount || numAmount < 20) {
+        return res.status(400).json({ error: 'Minimum deposit amount is 20 USDT.' });
+      }
+
+      const refNo = (txid || '').toString().trim();
+      if (!refNo || refNo.length < 8) {
+        return res.status(400).json({ error: 'Please enter a valid Transaction Hash / TXID.' });
+      }
+
+      const recharge = db.addRecharge({
+        id: 'rec_' + Date.now(),
+        userId: user.id,
+        username: user.username,
+        userPhone: `${user.countryCode}${user.phone}`,
+        amount: numAmount,
+        network: selectedMethod as NetworkType,
+        paymentMethod: selectedMethod as PaymentMethodType,
+        currency: 'USDT',
+        txid: refNo,
+        proofUrl: proofUrl || '',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+
+      db.logActivity(`USER:${user.id}`, 'RECHARGE_SUBMIT', `Submitted deposit request ${numAmount} USDT via ${selectedMethod}`);
+
+      return res.json({
+        success: true,
+        recharge,
+        message: 'Recharge request submitted successfully. Awaiting admin verification.',
+      });
     }
-
-    if (!network || (network !== 'USDT_BEP20' && network !== 'USDT_TRC20')) {
-      return res.status(400).json({ error: 'Invalid network selected. Must be USDT BEP20 or USDT TRC20.' });
-    }
-
-    if (!txid || txid.trim().length < 8) {
-      return res.status(400).json({ error: 'Please enter a valid Transaction Hash / TXID.' });
-    }
-
-    const recharge = db.addRecharge({
-      id: 'rec_' + Date.now(),
-      userId: user.id,
-      username: user.username,
-      userPhone: `${user.countryCode}${user.phone}`,
-      amount: numAmount,
-      network: network as NetworkType,
-      txid: txid.trim(),
-      proofUrl: proofUrl || '',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    });
-
-    db.logActivity(`USER:${user.id}`, 'RECHARGE_SUBMIT', `Submitted deposit request ${numAmount} USDT via ${network}`);
-
-    res.json({
-      success: true,
-      recharge,
-      message: 'Recharge request submitted successfully. Awaiting admin verification.',
-    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -356,7 +399,7 @@ app.post('/api/wallet/recharge', authenticateUserToken, (req: AuthenticatedReque
 // Submit Withdrawal Request
 app.post('/api/wallet/withdraw', authenticateUserToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const { amount, network, walletAddress, fundPassword } = req.body;
+    const { amount, network, paymentMethod, walletAddress, bankName, accountHolderName, accountNumber, branch, fundPassword } = req.body;
     const user = db.getUserById(req.userId!);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -371,43 +414,97 @@ app.post('/api/wallet/withdraw', authenticateUserToken, async (req: Authenticate
       }
     }
 
+    const selectedMethod = (paymentMethod || network || '').toString().trim();
+    const isEtb = selectedMethod === 'ETB_BANK';
+
     const numAmount = Number(amount);
-    if (!numAmount || numAmount < 10) {
-      return res.status(400).json({ error: 'Minimum withdrawal amount is 10 USDT.' });
+    if (!numAmount || numAmount <= 0) {
+      return res.status(400).json({ error: 'Please enter a valid withdrawal amount.' });
+    }
+
+    if (!isEtb && numAmount < 10) {
+      return res.status(400).json({ error: 'Minimum USDT withdrawal amount is 10 USDT.' });
     }
 
     if (user.balance < numAmount) {
-      return res.status(400).json({ error: `Insufficient available balance. Current balance: ${user.balance} USDT.` });
-    }
-
-    if (!walletAddress || walletAddress.trim().length < 10) {
-      return res.status(400).json({ error: 'Please provide a valid USDT destination wallet address.' });
+      return res.status(400).json({ error: `Insufficient available balance. Current balance: ${user.balance} ${isEtb ? 'ETB' : 'USDT'}.` });
     }
 
     const fee = Number(((numAmount * 8) / 100).toFixed(2));
     const netAmount = Number((numAmount - fee).toFixed(2));
 
-    const withdrawal = db.addWithdrawal({
-      id: 'wd_' + Date.now(),
-      userId: user.id,
-      username: user.username,
-      userPhone: `${user.countryCode}${user.phone}`,
-      amount: numAmount,
-      fee,
-      netAmount,
-      network: network as NetworkType,
-      walletAddress: walletAddress.trim(),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    });
+    if (isEtb) {
+      if (!bankName || !bankName.trim()) {
+        return res.status(400).json({ error: 'Please select an Ethiopian Bank.' });
+      }
+      if (!accountHolderName || !accountHolderName.trim()) {
+        return res.status(400).json({ error: 'Account Holder Name is required.' });
+      }
+      if (!accountNumber || !accountNumber.trim()) {
+        return res.status(400).json({ error: 'Account Number is required.' });
+      }
 
-    db.logActivity(`USER:${user.id}`, 'WITHDRAW_SUBMIT', `Submitted withdrawal request ${numAmount} USDT`);
+      const cleanBank = bankName.trim();
+      const cleanHolder = accountHolderName.trim();
+      const cleanAcc = accountNumber.trim();
+      const cleanBranch = (branch || '').trim();
 
-    res.json({
-      success: true,
-      withdrawal,
-      message: 'Withdrawal request submitted successfully. Awaiting admin approval.',
-    });
+      const withdrawal = db.addWithdrawal({
+        id: 'wd_' + Date.now(),
+        userId: user.id,
+        username: user.username,
+        userPhone: `${user.countryCode}${user.phone}`,
+        amount: numAmount,
+        fee,
+        netAmount,
+        network: 'ETB_BANK',
+        paymentMethod: 'ETB_BANK',
+        currency: 'ETB',
+        walletAddress: `${cleanBank} | ${cleanAcc} (${cleanHolder})`,
+        bankName: cleanBank,
+        accountHolderName: cleanHolder,
+        accountNumber: cleanAcc,
+        branch: cleanBranch,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+
+      db.logActivity(`USER:${user.id}`, 'WITHDRAW_SUBMIT', `Submitted ETB withdrawal request ${numAmount} ETB to ${cleanBank}`);
+
+      return res.json({
+        success: true,
+        withdrawal,
+        message: 'ETB Withdrawal request submitted successfully. Awaiting admin approval.',
+      });
+    } else {
+      if (!walletAddress || walletAddress.trim().length < 10) {
+        return res.status(400).json({ error: 'Please provide a valid USDT destination wallet address.' });
+      }
+
+      const withdrawal = db.addWithdrawal({
+        id: 'wd_' + Date.now(),
+        userId: user.id,
+        username: user.username,
+        userPhone: `${user.countryCode}${user.phone}`,
+        amount: numAmount,
+        fee,
+        netAmount,
+        network: selectedMethod as NetworkType,
+        paymentMethod: selectedMethod as PaymentMethodType,
+        currency: 'USDT',
+        walletAddress: walletAddress.trim(),
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+
+      db.logActivity(`USER:${user.id}`, 'WITHDRAW_SUBMIT', `Submitted withdrawal request ${numAmount} USDT`);
+
+      return res.json({
+        success: true,
+        withdrawal,
+        message: 'Withdrawal request submitted successfully. Awaiting admin approval.',
+      });
+    }
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

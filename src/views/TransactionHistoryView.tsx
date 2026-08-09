@@ -25,6 +25,23 @@ export const TransactionHistoryView: React.FC = () => {
     }
   };
 
+  const cleanTransactionDescription = (desc: string) => {
+    if (!desc) return '';
+    if (/admin|processed by|approved by/i.test(desc)) {
+      if (/^(processed|approved)\s+by\s+admin/i.test(desc) || /^approved\s+by/i.test(desc)) {
+        return 'Status: Approved';
+      }
+      return desc
+        .replace(/processed by admin\s*\w*/gi, 'Status: Approved')
+        .replace(/approved by admin\s*\w*/gi, 'Status: Approved')
+        .replace(/approved by\s*\w*/gi, 'Status: Approved')
+        .replace(/\s*by admin\s*\w*/gi, '')
+        .replace(/\s*by admin/gi, '')
+        .trim();
+    }
+    return desc;
+  };
+
   useEffect(() => {
     fetchTxs();
   }, [token]);
@@ -56,7 +73,7 @@ export const TransactionHistoryView: React.FC = () => {
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">{tx.description}</span>
+                    <span className="font-bold text-white">{cleanTransactionDescription(tx.description)}</span>
                   </div>
                   <p className="text-[10px] text-slate-500">{new Date(tx.createdAt).toLocaleString()}</p>
                 </div>

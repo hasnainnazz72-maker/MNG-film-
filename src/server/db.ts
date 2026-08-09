@@ -205,6 +205,26 @@ function validateAndMigrateData(data: any): DatabaseData {
     withdrawalFeePercent: 8,
     usdtBep20Address: '0xbd63907b714a667f5052c432cdc4ad3dc0d73658',
     usdtTrc20Address: 'TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy',
+    etbCbeBankName: 'CBE (Commercial Bank of Ethiopia)',
+    etbCbeAccountName: 'Fuad Nuri Sani',
+    etbCbeAccountNumber: '1000249476505',
+    ethiopianBanks: [
+      'CBE (Commercial Bank of Ethiopia)',
+      'Awash Bank',
+      'Dashen Bank',
+      'Bank of Abyssinia',
+      'Wegagen Bank',
+      'Nib International Bank',
+      'Hibret Bank',
+      'Oromia Bank',
+      'Zemen Bank',
+      'Cooperative Bank of Oromia',
+      'Telebirr / CBE Birr',
+      'Lion International Bank',
+      'Berhan Bank',
+      'Abay Bank',
+      'Addis International Bank',
+    ],
     allowCustomReferral: false,
     captchaEnabled: true,
     announcementText: 'System status: Normal operations. Order matching cycle 24 hours.',
@@ -873,13 +893,17 @@ class Database {
           }
         }
 
+        const isEtb = req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
+        const methodLabel = isEtb ? 'ETB Bank Transfer' : req.network;
+        const currencyLabel = isEtb ? 'ETB' : 'USDT';
+
         this.addTransaction({
           id: 'tx_' + Date.now(),
           userId: user.id,
           type: 'recharge',
           amount: req.amount,
           balanceAfter: user.balance,
-          description: `USDT Recharge (${req.network}) Approved`,
+          description: `${methodLabel} Recharge (${req.amount} ${currencyLabel}) Approved`,
           status: 'completed',
           createdAt: new Date().toISOString(),
         });
@@ -888,7 +912,7 @@ class Database {
           id: 'notif_' + Date.now(),
           userId: user.id,
           title: 'Recharge Approved!',
-          message: `Your deposit of ${req.amount} USDT via ${req.network} has been approved and credited.`,
+          message: `Your deposit of ${req.amount} ${currencyLabel} via ${methodLabel} has been approved and credited.`,
           type: 'success',
           isRead: false,
           createdAt: new Date().toISOString(),
@@ -932,13 +956,17 @@ class Database {
     user.balance -= request.amount;
     this.data.withdrawalRequests.unshift(request);
 
+    const isEtb = request.network === 'ETB_BANK' || request.paymentMethod === 'ETB_BANK';
+    const currencyLabel = isEtb ? 'ETB' : 'USDT';
+    const methodDesc = isEtb ? `ETB Bank (${request.bankName || 'Ethiopian Bank'})` : request.network;
+
     this.addTransaction({
       id: 'tx_' + Date.now(),
       userId: user.id,
       type: 'withdrawal',
       amount: -request.amount,
       balanceAfter: user.balance,
-      description: `Withdrawal Request ${request.amount} USDT (Fee: ${request.fee} USDT)`,
+      description: `Withdrawal Request ${request.amount} ${currencyLabel} via ${methodDesc} (Fee: ${request.fee} ${currencyLabel})`,
       status: 'pending',
       createdAt: new Date().toISOString(),
     });
@@ -958,6 +986,11 @@ class Database {
     req.processedAt = new Date().toISOString();
 
     const user = this.getUserById(req.userId);
+    const isEtb = req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
+    const currencyLabel = isEtb ? 'ETB' : 'USDT';
+    const destinationDesc = isEtb
+      ? `${req.bankName || 'ETB Bank'} - ${req.accountNumber || ''}`
+      : `${req.walletAddress.slice(0, 6)}...${req.walletAddress.slice(-4)}`;
 
     if (status === 'approved') {
       if (user) {
@@ -965,7 +998,7 @@ class Database {
           id: 'notif_' + Date.now(),
           userId: user.id,
           title: 'Withdrawal Approved!',
-          message: `Your withdrawal of ${req.netAmount} USDT (${req.network}) has been processed and sent to ${req.walletAddress.slice(0, 6)}...${req.walletAddress.slice(-4)}.`,
+          message: `Your withdrawal of ${req.netAmount} ${currencyLabel} has been processed and sent to ${destinationDesc}.`,
           type: 'success',
           isRead: false,
           createdAt: new Date().toISOString(),
@@ -980,7 +1013,7 @@ class Database {
           type: 'withdrawal',
           amount: req.amount,
           balanceAfter: user.balance,
-          description: `Withdrawal Refund (${req.amount} USDT) - Request Rejected`,
+          description: `Withdrawal Refund (${req.amount} ${currencyLabel}) - Request Rejected`,
           status: 'completed',
           createdAt: new Date().toISOString(),
         });
@@ -989,7 +1022,7 @@ class Database {
           id: 'notif_' + Date.now(),
           userId: user.id,
           title: 'Withdrawal Rejected & Refunded',
-          message: `Your withdrawal request of ${req.amount} USDT was rejected and refunded. Reason: ${adminNote || 'Invalid wallet details'}.`,
+          message: `Your withdrawal request of ${req.amount} ${currencyLabel} was rejected and refunded.`,
           type: 'error',
           isRead: false,
           createdAt: new Date().toISOString(),

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, VIPPlan } from '../types';
 import { LanguageCode, TRANSLATIONS, LANGUAGES } from '../i18n/translations';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +12,7 @@ interface AuthContextType {
   language: LanguageCode;
   t: (key: string) => string;
   isRtl: boolean;
+  isInitializing: boolean;
   setLanguage: (lang: LanguageCode) => void;
   login: (token: string, user: User) => void;
   adminLogin: (token: string, admin: { id: string; username: string; role: string }) => void;
@@ -33,6 +36,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('nexgrab_token'));
   const [user, setUser] = useState<User | null>(null);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
   const [adminToken, setAdminToken] = useState<string | null>(() => localStorage.getItem('nexgrab_admin_token'));
   const [adminUser, setAdminUser] = useState<{ id: string; username: string; role: string } | null>(() => {
@@ -140,23 +144,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fetch initial profile & grab status on boot
+  // Firebase auth state observer
   useEffect(() => {
-    if (token) {
-      refreshUserData();
-      refreshGrabStatus();
-    }
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      // Firebase auth state initialized
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Restore session and fetch initial profile on boot
+  useEffect(() => {
+    let mounted = true;
+    const initAuth = async () => {
+      if (token) {
+        try {
+          await Promise.all([refreshUserData(), refreshGrabStatus()]);
+        } catch (err) {
+          // ignore transient init error
+        }
+      }
+      if (mounted) {
+        setIsInitializing(false);
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, [token]);
 
   // Polling for live grab timer sync & balance updates every 2 seconds if grab active
   useEffect(() => {
-    if (!token) return;
+    if (!token || isInitializing) return;
     const interval = setInterval(() => {
       refreshGrabStatus();
     }, grabStatus.isGrabActive ? 1000 : 5000);
 
     return () => clearInterval(interval);
-  }, [token, grabStatus.isGrabActive]);
+  }, [token, isInitializing, grabStatus.isGrabActive]);
 
   return (
     <AuthContext.Provider
@@ -168,6 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         language,
         t,
         isRtl,
+        isInitializing,
         setLanguage,
         login,
         adminLogin,

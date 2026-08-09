@@ -639,68 +639,94 @@ export const AdminPanelView: React.FC = () => {
       {/* SECTION 3: RECHARGES MANAGEMENT */}
       {activeTab === 'recharges' && (
         <div className="space-y-4">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
+                <ArrowDownCircle className="w-4 h-4 text-cyan-400" />
+                <span>Recharge & Deposit Management</span>
+              </h3>
+              <span className="text-xs text-slate-400">Total Requests: {recharges.length}</span>
+            </div>
+
             {recharges.length === 0 ? (
               <div className="text-center py-10 text-slate-500 text-xs">No recharge requests found.</div>
             ) : (
-              recharges.map((rec) => (
-                <div
-                  key={rec.id}
-                  className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-base">{rec.amount} USDT</span>
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-[10px]">
-                        {rec.network}
-                      </span>
-                      <span className="text-slate-400">User: {rec.username} ({rec.userPhone})</span>
+              recharges.map((rec) => {
+                const isEtbRec = rec.network === 'ETB_BANK' || rec.paymentMethod === 'ETB_BANK';
+                return (
+                  <div
+                    key={rec.id}
+                    className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+                  >
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-extrabold text-white text-base">
+                          {rec.amount} {isEtbRec ? 'ETB' : 'USDT'}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                            isEtbRec
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-slate-800 text-cyan-300'
+                          }`}
+                        >
+                          {isEtbRec ? 'ETB Bank Transfer' : rec.network}
+                        </span>
+                        <span className="text-slate-400">
+                          User: <strong className="text-white">{rec.username}</strong> ({rec.userPhone})
+                        </span>
+                      </div>
+
+                      <p className="font-mono text-cyan-300 text-[11px]">
+                        {isEtbRec ? 'Ref / TXID:' : 'TXID:'} {rec.transactionReference || rec.txid}
+                      </p>
+                      <p className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</p>
                     </div>
-                    <p className="font-mono text-slate-400 text-[11px]">TXID: {rec.txid}</p>
-                    <p className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</p>
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {rec.proofUrl ? (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedProofUrl(rec.proofUrl)}
-                        className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-bold text-xs flex items-center gap-1.5 transition-colors"
-                      >
-                        <Search className="w-3.5 h-3.5" />
-                        <span>View Screenshot</span>
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-slate-500 italic">No screenshot</span>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {rec.proofUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProofUrl(rec.proofUrl)}
+                          className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                        >
+                          <Search className="w-3.5 h-3.5" />
+                          <span>View Screenshot</span>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 italic">No screenshot</span>
+                      )}
 
-                    {rec.status === 'pending' ? (
-                      <>
-                        <button
-                          onClick={() => handleProcessRecharge(rec.id, 'approved')}
-                          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow"
+                      {rec.status === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => handleProcessRecharge(rec.id, 'approved')}
+                            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow"
+                          >
+                            Approve Deposit
+                          </button>
+                          <button
+                            onClick={() => handleProcessRecharge(rec.id, 'rejected')}
+                            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs"
+                          >
+                            Reject Request
+                          </button>
+                        </>
+                      ) : (
+                        <span
+                          className={`px-3 py-1 rounded-full font-bold text-xs ${
+                            rec.status === 'approved'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : 'bg-rose-500/20 text-rose-300'
+                          }`}
                         >
-                          Approve Deposit
-                        </button>
-                        <button
-                          onClick={() => handleProcessRecharge(rec.id, 'rejected')}
-                          className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs"
-                        >
-                          Reject Request
-                        </button>
-                      </>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 rounded-full font-bold text-xs ${
-                          rec.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
-                        }`}
-                      >
-                        {rec.status.toUpperCase()}
-                      </span>
-                    )}
+                          {rec.status.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -746,54 +772,102 @@ export const AdminPanelView: React.FC = () => {
       {/* SECTION 4: WITHDRAWALS MANAGEMENT */}
       {activeTab === 'withdrawals' && (
         <div className="space-y-4">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
+                <ArrowUpCircle className="w-4 h-4 text-amber-400" />
+                <span>Withdrawal & Payout Management</span>
+              </h3>
+              <span className="text-xs text-slate-400">Total Requests: {withdrawals.length}</span>
+            </div>
+
             {withdrawals.length === 0 ? (
               <div className="text-center py-10 text-slate-500 text-xs">No withdrawal requests found.</div>
             ) : (
-              withdrawals.map((wd) => (
-                <div
-                  key={wd.id}
-                  className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-base">{wd.amount} USDT</span>
-                      <span className="text-slate-400">(Net payout: {wd.netAmount} USDT | Fee: {wd.fee} USDT)</span>
-                    </div>
-                    <p className="font-mono text-cyan-300 text-[11px]">Address: {wd.walletAddress}</p>
-                    <p className="text-[10px] text-slate-500">
-                      User: {wd.username} ({wd.userPhone}) | Date: {new Date(wd.createdAt).toLocaleString()}
-                    </p>
-                  </div>
+              withdrawals.map((wd) => {
+                const isEtbWd = wd.network === 'ETB_BANK' || wd.paymentMethod === 'ETB_BANK';
+                const symbol = isEtbWd ? 'ETB' : 'USDT';
+                return (
+                  <div
+                    key={wd.id}
+                    className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
+                  >
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-extrabold text-white text-base">
+                          {wd.amount} {symbol}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                            isEtbWd
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-amber-500/20 text-amber-300'
+                          }`}
+                        >
+                          {isEtbWd ? 'ETB Bank Transfer' : wd.network}
+                        </span>
+                        <span className="text-slate-400">
+                          (Net payout: <strong className="text-emerald-400">{wd.netAmount} {symbol}</strong> | Fee: {wd.fee} {symbol})
+                        </span>
+                      </div>
 
-                  <div className="flex items-center gap-2">
-                    {wd.status === 'pending' ? (
-                      <>
-                        <button
-                          onClick={() => handleProcessWithdrawal(wd.id, 'approved')}
-                          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow"
+                      {isEtbWd ? (
+                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-slate-300">
+                          <p>
+                            <span className="text-slate-500">Bank Name:</span>{' '}
+                            <strong className="text-white">{wd.bankName || 'Ethiopian Bank'}</strong>
+                          </p>
+                          <p>
+                            <span className="text-slate-500">Account Holder:</span>{' '}
+                            <strong className="text-amber-300">{wd.accountHolderName || 'N/A'}</strong>
+                          </p>
+                          <p>
+                            <span className="text-slate-500">Account Number:</span>{' '}
+                            <strong className="font-mono text-cyan-300 select-all">{wd.accountNumber || wd.walletAddress}</strong>
+                            {wd.branch && <span className="text-slate-400 ml-2">({wd.branch})</span>}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="font-mono text-cyan-300 text-[11px] select-all">Address: {wd.walletAddress}</p>
+                      )}
+
+                      <p className="text-[10px] text-slate-500">
+                        User: <strong className="text-white">{wd.username}</strong> ({wd.userPhone}) | Date:{' '}
+                        {new Date(wd.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {wd.status === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => handleProcessWithdrawal(wd.id, 'approved')}
+                            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow"
+                          >
+                            Approve Payout
+                          </button>
+                          <button
+                            onClick={() => handleProcessWithdrawal(wd.id, 'rejected')}
+                            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs"
+                          >
+                            Reject & Refund
+                          </button>
+                        </>
+                      ) : (
+                        <span
+                          className={`px-3 py-1 rounded-full font-bold text-xs ${
+                            wd.status === 'approved'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : 'bg-rose-500/20 text-rose-300'
+                          }`}
                         >
-                          Approve Payout
-                        </button>
-                        <button
-                          onClick={() => handleProcessWithdrawal(wd.id, 'rejected')}
-                          className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs"
-                        >
-                          Reject & Refund
-                        </button>
-                      </>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 rounded-full font-bold text-xs ${
-                          wd.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
-                        }`}
-                      >
-                        {wd.status.toUpperCase()}
-                      </span>
-                    )}
+                          {wd.status.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

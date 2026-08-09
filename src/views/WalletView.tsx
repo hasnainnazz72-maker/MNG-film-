@@ -64,7 +64,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-semibold">
             <Clock className="w-3 h-3 animate-spin" />
-            <span>Pending Admin</span>
+            <span>Pending</span>
           </span>
         );
       case 'rejected':
@@ -78,6 +78,38 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
       default:
         return null;
     }
+  };
+
+  const formatMemberNote = (note: string | undefined | null, status: string) => {
+    if (!note) return null;
+    // Hide admin details (admin name, admin username, admin ID) from member view
+    if (/admin|processed|approved/i.test(note)) {
+      if (status === 'approved' || status === 'completed') {
+        return 'Status: Approved';
+      }
+      if (status === 'rejected' || status === 'failed') {
+        return 'Status: Rejected';
+      }
+      return 'Status: Pending';
+    }
+    return note;
+  };
+
+  const cleanTransactionDescription = (desc: string) => {
+    if (!desc) return '';
+    if (/admin|processed by|approved by/i.test(desc)) {
+      if (/^(processed|approved)\s+by\s+admin/i.test(desc) || /^approved\s+by/i.test(desc)) {
+        return 'Status: Approved';
+      }
+      return desc
+        .replace(/processed by admin\s*\w*/gi, 'Status: Approved')
+        .replace(/approved by admin\s*\w*/gi, 'Status: Approved')
+        .replace(/approved by\s*\w*/gi, 'Status: Approved')
+        .replace(/\s*by admin\s*\w*/gi, '')
+        .replace(/\s*by admin/gi, '')
+        .trim();
+    }
+    return desc;
   };
 
   return (
@@ -207,27 +239,39 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
             {recharges.length === 0 ? (
               <div className="text-center py-10 text-slate-500 text-xs">No recharge history records found.</div>
             ) : (
-              recharges.map((rec) => (
-                <div
-                  key={rec.id}
-                  className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-sm">{rec.amount} USDT</span>
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-300 font-mono">
-                        {rec.network}
-                      </span>
+              recharges.map((rec) => {
+                const isEtb = rec.network === 'ETB_BANK' || rec.paymentMethod === 'ETB_BANK';
+                const symbol = isEtb ? 'ETB' : 'USDT';
+                return (
+                  <div
+                    key={rec.id}
+                    className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-sm">
+                          {rec.amount} {symbol}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-cyan-300 font-mono">
+                          {isEtb ? 'ETB Bank Transfer' : rec.network}
+                        </span>
+                      </div>
+                      <p className="text-slate-400 font-mono text-[11px]">
+                        {isEtb ? 'Ref Number:' : 'TXID:'} {rec.transactionReference || rec.txid}
+                      </p>
+                      <p className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</p>
                     </div>
-                    <p className="text-slate-400 font-mono text-[11px]">TXID: {rec.txid}</p>
-                    <p className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</p>
+                    <div className="sm:text-right space-y-1">
+                      {renderStatusBadge(rec.status)}
+                      {formatMemberNote(rec.adminNote, rec.status) && (
+                        <p className="text-[10px] text-slate-400 italic font-medium">
+                          {formatMemberNote(rec.adminNote, rec.status)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="sm:text-right space-y-1">
-                    {renderStatusBadge(rec.status)}
-                    {rec.adminNote && <p className="text-[10px] text-rose-300 italic">Note: {rec.adminNote}</p>}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -238,25 +282,43 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
             {withdrawals.length === 0 ? (
               <div className="text-center py-10 text-slate-500 text-xs">No withdrawal history records found.</div>
             ) : (
-              withdrawals.map((wd) => (
-                <div
-                  key={wd.id}
-                  className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-sm">{wd.amount} USDT</span>
-                      <span className="text-[11px] text-slate-400">(Net: {wd.netAmount} USDT | Fee: {wd.fee} USDT)</span>
+              withdrawals.map((wd) => {
+                const isEtb = wd.network === 'ETB_BANK' || wd.paymentMethod === 'ETB_BANK';
+                const symbol = isEtb ? 'ETB' : 'USDT';
+                return (
+                  <div
+                    key={wd.id}
+                    className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-sm">
+                          {wd.amount} {symbol}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          (Net: {wd.netAmount} {symbol} | Fee: {wd.fee} {symbol})
+                        </span>
+                      </div>
+                      {isEtb ? (
+                        <p className="text-slate-300 font-medium text-[11px]">
+                          {wd.bankName} - {wd.accountHolderName} ({wd.accountNumber})
+                        </p>
+                      ) : (
+                        <p className="text-slate-400 font-mono text-[11px]">Address: {wd.walletAddress}</p>
+                      )}
+                      <p className="text-[10px] text-slate-500">{new Date(wd.createdAt).toLocaleString()}</p>
                     </div>
-                    <p className="text-slate-400 font-mono text-[11px]">Address: {wd.walletAddress}</p>
-                    <p className="text-[10px] text-slate-500">{new Date(wd.createdAt).toLocaleString()}</p>
+                    <div className="sm:text-right space-y-1">
+                      {renderStatusBadge(wd.status)}
+                      {formatMemberNote(wd.adminNote, wd.status) && (
+                        <p className="text-[10px] text-slate-400 italic font-medium">
+                          {formatMemberNote(wd.adminNote, wd.status)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="sm:text-right space-y-1">
-                    {renderStatusBadge(wd.status)}
-                    {wd.adminNote && <p className="text-[10px] text-rose-300 italic">Note: {wd.adminNote}</p>}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -273,7 +335,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
                   className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-3 text-xs"
                 >
                   <div className="space-y-1">
-                    <p className="font-semibold text-white">{tx.description}</p>
+                    <p className="font-semibold text-white">{cleanTransactionDescription(tx.description)}</p>
                     <p className="text-[10px] text-slate-500">{new Date(tx.createdAt).toLocaleString()}</p>
                   </div>
                   <div className="text-right">
