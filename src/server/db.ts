@@ -206,8 +206,8 @@ function validateAndMigrateData(data: any): DatabaseData {
     usdtBep20Address: '0xbd63907b714a667f5052c432cdc4ad3dc0d73658',
     usdtTrc20Address: 'TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy',
     etbCbeBankName: 'CBE (Commercial Bank of Ethiopia)',
-    etbCbeAccountName: 'Fuad Nuri Sani',
-    etbCbeAccountNumber: '1000249476505',
+    etbCbeAccountName: 'Bonsa Shamsadin',
+    etbCbeAccountNumber: '1000251685715',
     ethiopianBanks: [
       'CBE (Commercial Bank of Ethiopia)',
       'Awash Bank',
