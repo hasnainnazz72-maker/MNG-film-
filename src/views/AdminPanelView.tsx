@@ -58,6 +58,7 @@ export const AdminPanelView: React.FC = () => {
   // Modals / Actions
   const [balanceAdjustAmount, setBalanceAdjustAmount] = useState<string>('');
   const [balanceAdjustType, setBalanceAdjustType] = useState<'add' | 'deduct'>('add');
+  const [balanceAdjustCurrency, setBalanceAdjustCurrency] = useState<'ETB' | 'USDT'>('ETB');
   const [balanceAdjustReason, setBalanceAdjustReason] = useState<string>('');
   const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
 
@@ -319,6 +320,7 @@ export const AdminPanelView: React.FC = () => {
         body: JSON.stringify({
           amount: Number(balanceAdjustAmount),
           type: balanceAdjustType,
+          currency: balanceAdjustCurrency,
           reason: balanceAdjustReason,
         }),
       });
@@ -329,9 +331,13 @@ export const AdminPanelView: React.FC = () => {
         setSelectedMember(null);
         fetchMembers();
         fetchDashboard();
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'Failed to adjust balance');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Error submitting balance adjustment');
     }
   };
 
@@ -1010,62 +1016,107 @@ export const AdminPanelView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="text-base font-bold text-white">Adjust Balance for {selectedMember.username}</h3>
-            <p className="text-xs text-slate-400">Current Balance: {selectedMember.balance.toFixed(2)} USDT</p>
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex justify-between items-center text-xs">
+              <span className="text-slate-400">Current Member Balance:</span>
+              <span className="font-extrabold text-cyan-300 font-mono text-sm">
+                {selectedMember.balance.toFixed(2)}
+              </span>
+            </div>
 
             <form onSubmit={handleAdjustBalance} className="space-y-4">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBalanceAdjustType('add')}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${
-                    balanceAdjustType === 'add' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  + Add Balance
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBalanceAdjustType('deduct')}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold ${
-                    balanceAdjustType === 'deduct' ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  - Deduct Balance
-                </button>
+              {/* Currency Selector */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Currency Unit</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBalanceAdjustCurrency('ETB')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                      balanceAdjustCurrency === 'ETB'
+                        ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-300'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    ETB (Ethiopian Birr)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBalanceAdjustCurrency('USDT')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                      balanceAdjustCurrency === 'USDT'
+                        ? 'bg-cyan-500/20 border border-cyan-500 text-cyan-300'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    USDT (Crypto)
+                  </button>
+                </div>
               </div>
 
-              <input
-                type="number"
-                min={0.1}
-                value={balanceAdjustAmount}
-                onChange={(e) => setBalanceAdjustAmount(e.target.value)}
-                placeholder="Amount in USDT"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                required
-              />
+              {/* Action Type: Add / Deduct */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Action Type</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBalanceAdjustType('add')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-extrabold ${
+                      balanceAdjustType === 'add' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    + Add Balance
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBalanceAdjustType('deduct')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-extrabold ${
+                      balanceAdjustType === 'deduct' ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    - Deduct Balance
+                  </button>
+                </div>
+              </div>
 
-              <input
-                type="text"
-                value={balanceAdjustReason}
-                onChange={(e) => setBalanceAdjustReason(e.target.value)}
-                placeholder="Reason for audit log..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
-                required
-              />
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Adjustment Amount</label>
+                <input
+                  type="number"
+                  min={0.1}
+                  step="any"
+                  value={balanceAdjustAmount}
+                  onChange={(e) => setBalanceAdjustAmount(e.target.value)}
+                  placeholder={`Amount in ${balanceAdjustCurrency}`}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white font-bold placeholder-slate-600 focus:border-cyan-500 focus:outline-none"
+                  required
+                />
+              </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Reason / Remark (Required for Audit)</label>
+                <input
+                  type="text"
+                  value={balanceAdjustReason}
+                  onChange={(e) => setBalanceAdjustReason(e.target.value)}
+                  placeholder="Reason for audit log..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-600 focus:border-cyan-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setSelectedMember(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black"
                 >
-                  Save Adjustment
+                  Confirm Adjustment
                 </button>
               </div>
             </form>

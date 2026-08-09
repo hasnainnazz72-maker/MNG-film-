@@ -32,6 +32,13 @@ import {
 
 export { VIP_PLANS };
 
+export function getUtcDailyCycle(date: Date = new Date()): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export interface StoredAdmin {
   id: string;
   username: string;
@@ -138,6 +145,7 @@ function normalizeUser(rawUser: any): StoredUser {
     vipLevel: (rawUser.vipLevel && rawUser.vipLevel >= 1 && rawUser.vipLevel <= 5) ? rawUser.vipLevel : 1,
     isGrabActive: !!rawUser.isGrabActive,
     lastGrabTimestamp: rawUser.lastGrabTimestamp || null,
+    lastGrabUtcCycle: rawUser.lastGrabUtcCycle || null,
     grabEndTime: rawUser.grabEndTime || null,
     referralCode: (rawUser.referralCode || 'NG' + Math.floor(100000 + Math.random() * 900000)).toUpperCase().trim(),
     referredByCode: rawUser.referredByCode ? rawUser.referredByCode.toUpperCase().trim() : null,
@@ -1061,27 +1069,39 @@ class Database {
       throw new Error('Your account is currently suspended. Contact support.');
     }
 
-    if (user.investment < 20) {
-      throw new Error('Minimum investment of 20 USDT is required to start Grab Order.');
+    const eligibleBalance = Math.max(user.balance || 0, user.investment || 0);
+    const isEtbUser = eligibleBalance >= 200 || user.balance >= 200;
+    const minRequiredBalance = isEtbUser ? 4000 : 20;
+
+    if (eligibleBalance < minRequiredBalance) {
+      throw new Error(
+        isEtbUser
+          ? `Minimum eligible balance of 4,000 ETB is required to start Grab Order. Current balance: ${eligibleBalance.toFixed(2)} ETB.`
+          : `Minimum eligible balance of 20 USDT is required to start Grab Order. Current balance: ${eligibleBalance.toFixed(2)} USDT.`
+      );
     }
 
-    const now = Date.now();
+    const now = new Date();
+    const nowMs = now.getTime();
+    const currentUtcCycle = getUtcDailyCycle(now);
 
-    if (user.lastGrabTimestamp && (now - user.lastGrabTimestamp) < 24 * 60 * 60 * 1000) {
-      const msLeft = (24 * 60 * 60 * 1000) - (now - user.lastGrabTimestamp);
-      const hoursLeft = (msLeft / (1000 * 60 * 60)).toFixed(1);
-      throw new Error(`You have already completed your daily Grab Order. Next cycle available in ${hoursLeft} hours.`);
+    // Strict 00:00 UTC cycle check
+    if (user.lastGrabUtcCycle === currentUtcCycle) {
+      const nextUtcResetMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0) - nowMs;
+      const hoursLeft = (Math.max(0, nextUtcResetMs) / (1000 * 60 * 60)).toFixed(1);
+      throw new Error(`You have already completed your daily Grab Order for today's UTC cycle (${currentUtcCycle}). Next cycle resets at 00:00 UTC (in ${hoursLeft} hours).`);
     }
 
-    if (user.isGrabActive && user.grabEndTime && now < user.grabEndTime) {
-      const remainingSeconds = Math.ceil((user.grabEndTime - now) / 1000);
+    if (user.isGrabActive && user.grabEndTime && nowMs < user.grabEndTime) {
+      const remainingSeconds = Math.ceil((user.grabEndTime - nowMs) / 1000);
       return { remainingSeconds, endTime: user.grabEndTime };
     }
 
     const durationMs = 60 * 1000;
     user.isGrabActive = true;
-    user.lastGrabTimestamp = now;
-    user.grabEndTime = now + durationMs;
+    user.lastGrabTimestamp = nowMs;
+    user.lastGrabUtcCycle = currentUtcCycle;
+    user.grabEndTime = nowMs + durationMs;
 
     this.saveLocal();
     this.setFirestoreDoc('users', user.id, user);
@@ -1100,28 +1120,40 @@ class Database {
     const user = this.getUserById(userId);
     if (!user) throw new Error('User not found');
 
-    const now = Date.now();
+    const now = new Date();
+    const nowMs = now.getTime();
+    const currentUtcCycle = getUtcDailyCycle(now);
     const plan = VIP_PLANS.find(p => p.level === user.vipLevel) || VIP_PLANS[0];
 
+    const eligibleBalance = Math.max(user.balance || 0, user.investment || 0);
+
     if (user.isGrabActive && user.grabEndTime) {
-      if (now >= user.grabEndTime) {
-        const profitAmount = Number(((user.investment * plan.dailyProfitPercent) / 100).toFixed(4));
+      if (nowMs >= user.grabEndTime) {
+        const profitAmount = Number(((eligibleBalance * plan.dailyProfitPercent) / 100).toFixed(4));
+        const prevBalance = user.balance;
+
         user.isGrabActive = false;
-        user.balance += profitAmount;
-        user.todayProfit += profitAmount;
-        user.totalProfit += profitAmount;
+        user.balance = Number((user.balance + profitAmount).toFixed(4));
+        user.investment = Math.max(user.investment || 0, user.balance); // Compound profit!
+        user.todayProfit = Number(((user.todayProfit || 0) + profitAmount).toFixed(4));
+        user.totalProfit = Number(((user.totalProfit || 0) + profitAmount).toFixed(4));
+        const newBalance = user.balance;
 
         const grabLog: GrabLog = {
-          id: 'grab_' + Date.now(),
+          id: 'grab_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
           userId: user.id,
           vipLevel: user.vipLevel,
-          investmentAtGrab: user.investment,
+          investmentAtGrab: eligibleBalance,
           profitEarned: profitAmount,
+          previousBalance: prevBalance,
+          newBalance: newBalance,
+          utcCycleDate: user.lastGrabUtcCycle || currentUtcCycle,
           durationSeconds: 60,
-          startTime: new Date(user.lastGrabTimestamp || now - 60000).toISOString(),
-          endTime: new Date(now).toISOString(),
+          startTime: new Date(user.lastGrabTimestamp || nowMs - 60000).toISOString(),
+          endTime: now.toISOString(),
           status: 'completed',
         };
+
         this.data.grabLogs.unshift(grabLog);
         this.setFirestoreDoc('grabLogs', grabLog.id, grabLog);
 
@@ -1131,9 +1163,9 @@ class Database {
           type: 'grab_profit',
           amount: profitAmount,
           balanceAfter: user.balance,
-          description: `VIP ${user.vipLevel} Daily Grab Profit (${plan.dailyProfitPercent}%)`,
+          description: `VIP ${user.vipLevel} Daily Compound Profit (${plan.dailyProfitPercent}%) [UTC Cycle: ${currentUtcCycle}]`,
           status: 'completed',
-          createdAt: new Date().toISOString(),
+          createdAt: now.toISOString(),
         });
 
         // Team Commissions
@@ -1142,9 +1174,9 @@ class Database {
           if (level1User) {
             const l1Bonus = Number((profitAmount * 0.14).toFixed(4));
             if (l1Bonus > 0) {
-              level1User.balance += l1Bonus;
-              level1User.todayProfit += l1Bonus;
-              level1User.totalProfit += l1Bonus;
+              level1User.balance = Number((level1User.balance + l1Bonus).toFixed(4));
+              level1User.todayProfit = Number(((level1User.todayProfit || 0) + l1Bonus).toFixed(4));
+              level1User.totalProfit = Number(((level1User.totalProfit || 0) + l1Bonus).toFixed(4));
               this.setFirestoreDoc('users', level1User.id, level1User);
               this.addTransaction({
                 id: 'tx_ref1_' + Date.now(),
@@ -1154,7 +1186,7 @@ class Database {
                 balanceAfter: level1User.balance,
                 description: `Level 1 Team Grab Bonus (14% from ${user.username})`,
                 status: 'completed',
-                createdAt: new Date().toISOString(),
+                createdAt: now.toISOString(),
               });
             }
 
@@ -1163,9 +1195,9 @@ class Database {
               if (level2User) {
                 const l2Bonus = Number((profitAmount * 0.07).toFixed(4));
                 if (l2Bonus > 0) {
-                  level2User.balance += l2Bonus;
-                  level2User.todayProfit += l2Bonus;
-                  level2User.totalProfit += l2Bonus;
+                  level2User.balance = Number((level2User.balance + l2Bonus).toFixed(4));
+                  level2User.todayProfit = Number(((level2User.todayProfit || 0) + l2Bonus).toFixed(4));
+                  level2User.totalProfit = Number(((level2User.totalProfit || 0) + l2Bonus).toFixed(4));
                   this.setFirestoreDoc('users', level2User.id, level2User);
                   this.addTransaction({
                     id: 'tx_ref2_' + Date.now(),
@@ -1175,7 +1207,7 @@ class Database {
                     balanceAfter: level2User.balance,
                     description: `Level 2 Team Grab Bonus (7% from ${user.username})`,
                     status: 'completed',
-                    createdAt: new Date().toISOString(),
+                    createdAt: now.toISOString(),
                   });
                 }
 
@@ -1184,9 +1216,9 @@ class Database {
                   if (level3User) {
                     const l3Bonus = Number((profitAmount * 0.03).toFixed(4));
                     if (l3Bonus > 0) {
-                      level3User.balance += l3Bonus;
-                      level3User.todayProfit += l3Bonus;
-                      level3User.totalProfit += l3Bonus;
+                      level3User.balance = Number((level3User.balance + l3Bonus).toFixed(4));
+                      level3User.todayProfit = Number(((level3User.todayProfit || 0) + l3Bonus).toFixed(4));
+                      level3User.totalProfit = Number(((level3User.totalProfit || 0) + l3Bonus).toFixed(4));
                       this.setFirestoreDoc('users', level3User.id, level3User);
                       this.addTransaction({
                         id: 'tx_ref3_' + Date.now(),
@@ -1196,7 +1228,7 @@ class Database {
                         balanceAfter: level3User.balance,
                         description: `Level 3 Team Grab Bonus (3% from ${user.username})`,
                         status: 'completed',
-                        createdAt: new Date().toISOString(),
+                        createdAt: now.toISOString(),
                       });
                     }
                   }
@@ -1211,20 +1243,24 @@ class Database {
       }
     }
 
+    const isEtbUser = eligibleBalance >= 200 || user.balance >= 200;
+    const minRequiredBalance = isEtbUser ? 4000 : 20;
+
     let canGrab = true;
     let cooldownRemainingMs = 0;
 
-    if (user.investment < 20) {
+    if (eligibleBalance < minRequiredBalance) {
       canGrab = false;
     } else if (user.isGrabActive) {
       canGrab = false;
-    } else if (user.lastGrabTimestamp && (now - user.lastGrabTimestamp) < 24 * 60 * 60 * 1000) {
+    } else if (user.lastGrabUtcCycle === currentUtcCycle) {
       canGrab = false;
-      cooldownRemainingMs = (24 * 60 * 60 * 1000) - (now - user.lastGrabTimestamp);
+      const nextUtcResetMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0) - nowMs;
+      cooldownRemainingMs = Math.max(0, nextUtcResetMs);
     }
 
-    const remainingSeconds = user.isGrabActive && user.grabEndTime && user.grabEndTime > now
-      ? Math.ceil((user.grabEndTime - now) / 1000)
+    const remainingSeconds = user.isGrabActive && user.grabEndTime && user.grabEndTime > nowMs
+      ? Math.ceil((user.grabEndTime - nowMs) / 1000)
       : 0;
 
     return {
@@ -1236,6 +1272,10 @@ class Database {
       totalProfit: user.totalProfit,
       vipPlan: plan,
     };
+  }
+
+  getGrabHistory(userId: string): GrabLog[] {
+    return this.data.grabLogs.filter(log => log.userId === userId);
   }
 
   // --- ANNOUNCEMENTS, BANNERS, SUPPORT, NOTIFICATIONS ---
@@ -1323,40 +1363,62 @@ class Database {
     return ticket;
   }
 
-  adjustUserBalance(userId: string, amount: number, type: 'add' | 'deduct', reason: string): StoredUser {
+  adjustUserBalance(
+    userId: string,
+    amount: number,
+    type: 'add' | 'deduct',
+    reason: string,
+    currency: 'ETB' | 'USDT' = 'ETB',
+    adminUsername: string = 'Admin'
+  ): StoredUser {
     const user = this.getUserById(userId);
     if (!user) throw new Error('User not found');
 
-    if (type === 'deduct' && user.balance < amount) {
-      throw new Error('Cannot deduct more than user current balance');
+    if (amount <= 0) {
+      throw new Error('Adjustment amount must be greater than 0');
+    }
+
+    const prevBalance = user.balance;
+
+    if (type === 'deduct' && prevBalance < amount) {
+      throw new Error(`Cannot deduct ${amount} ${currency}. User current balance is only ${prevBalance} ${currency}.`);
     }
 
     const netAdjust = type === 'add' ? amount : -amount;
-    user.balance += netAdjust;
-    if (type === 'add') {
-      user.investment += amount;
-    }
+    user.balance = Number((user.balance + netAdjust).toFixed(2));
+    user.investment = Math.max(user.investment || 0, user.balance);
+
+    const newBalance = user.balance;
+    const utcTimestamp = new Date().toISOString();
+
+    const auditDesc = `Admin [${type.toUpperCase()}] ${amount} ${currency} by ${adminUsername} | Member: ${user.username} (${user.id}) | Prev: ${prevBalance} ${currency} -> New: ${newBalance} ${currency} | Remark: ${reason}`;
 
     this.addTransaction({
       id: 'tx_adj_' + Date.now(),
       userId: user.id,
       type: type === 'add' ? 'admin_add' : 'admin_deduct',
       amount: netAdjust,
-      balanceAfter: user.balance,
-      description: `Admin Manual Balance ${type.toUpperCase()}: ${reason}`,
+      balanceAfter: newBalance,
+      description: auditDesc,
       status: 'completed',
-      createdAt: new Date().toISOString(),
+      createdAt: utcTimestamp,
     });
 
     this.addNotification({
       id: 'notif_adj_' + Date.now(),
       userId: user.id,
-      title: `Balance ${type === 'add' ? 'Credited' : 'Adjusted'}`,
-      message: `Your balance was ${type === 'add' ? 'increased' : 'decreased'} by ${amount} USDT by Admin. Reason: ${reason}.`,
+      title: `Balance ${type === 'add' ? 'Credited' : 'Deducted'} (${currency})`,
+      message: `Your balance was ${type === 'add' ? 'increased' : 'decreased'} by ${amount} ${currency} by Admin. Reason: ${reason}. New Balance: ${newBalance} ${currency}.`,
       type: type === 'add' ? 'success' : 'warning',
       isRead: false,
-      createdAt: new Date().toISOString(),
+      createdAt: utcTimestamp,
     });
+
+    this.logActivity(
+      `ADMIN:${adminUsername}`,
+      `BALANCE_${type.toUpperCase()}`,
+      auditDesc
+    );
 
     this.checkAndUpdateVipLevel(user.id);
     this.saveLocal();

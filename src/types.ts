@@ -13,6 +13,7 @@ export interface User {
   vipLevel: VipLevel;
   isGrabActive: boolean;
   lastGrabTimestamp: number | null; // ms timestamp
+  lastGrabUtcCycle?: string | null;  // YYYY-MM-DD in UTC
   grabEndTime: number | null;       // ms timestamp
   referralCode: string;
   referredByCode: string | null;
@@ -84,7 +85,7 @@ export interface WithdrawalRequest {
   processedAt?: string;
 }
 
-export type TransactionType = 'recharge' | 'withdrawal' | 'grab_profit' | 'referral_bonus' | 'admin_add' | 'admin_deduct';
+export type TransactionType = 'recharge' | 'withdrawal' | 'grab_profit' | 'referral_bonus' | 'admin_add' | 'admin_deduct' | 'admin_adjustment';
 
 export interface Transaction {
   id: string;
@@ -103,6 +104,9 @@ export interface GrabLog {
   vipLevel: VipLevel;
   investmentAtGrab: number;
   profitEarned: number;
+  previousBalance: number;
+  newBalance: number;
+  utcCycleDate: string;
   durationSeconds: number;
   startTime: string;
   endTime: string;

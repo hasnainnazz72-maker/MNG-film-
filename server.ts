@@ -306,6 +306,16 @@ app.get('/api/grab/status', authenticateUserToken, (req: AuthenticatedRequest, r
   }
 });
 
+// Get Member Grab Profit History
+app.get('/api/grab/history', authenticateUserToken, (req: AuthenticatedRequest, res) => {
+  try {
+    const history = db.getGrabHistory(req.userId!);
+    res.json({ success: true, history });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- WALLET, RECHARGE & WITHDRAWAL APIS ---
 
 // Submit Recharge Request
@@ -324,8 +334,8 @@ app.post('/api/wallet/recharge', authenticateUserToken, (req: AuthenticatedReque
 
     const numAmount = Number(amount);
     if (isEtb) {
-      if (!numAmount || numAmount <= 0) {
-        return res.status(400).json({ error: 'Please enter a valid ETB recharge amount.' });
+      if (!numAmount || numAmount < 4000) {
+        return res.status(400).json({ error: 'Minimum deposit amount for ETB Bank Transfer is 4,000 ETB.' });
       }
       const refNo = (transactionReference || txid || '').toString().trim();
       if (!refNo || refNo.length < 3) {
@@ -800,13 +810,20 @@ app.patch('/api/admin/members/:id', authenticateAdminToken, async (req: AdminAut
 // Adjust Member Balance (Manual Add / Deduct)
 app.post('/api/admin/members/:id/adjust-balance', authenticateAdminToken, (req: AdminAuthenticatedRequest, res) => {
   try {
-    const { amount, type, reason } = req.body;
-    if (!amount || amount <= 0 || (type !== 'add' && type !== 'deduct') || !reason) {
-      return res.status(400).json({ error: 'Amount, valid type (add/deduct), and reason are required.' });
+    const { amount, type, reason, currency } = req.body;
+    if (!amount || Number(amount) <= 0 || (type !== 'add' && type !== 'deduct') || !reason) {
+      return res.status(400).json({ error: 'Valid amount (>0), action (add/deduct), and remark/reason are required.' });
     }
 
-    const updatedUser = db.adjustUserBalance(req.params.id, Number(amount), type, reason);
-    db.logActivity(`ADMIN:${req.adminUsername}`, 'BALANCE_ADJUST', `Adjusted balance for ${req.params.id}: ${type} ${amount} USDT`);
+    const curr = currency === 'USDT' ? 'USDT' : 'ETB';
+    const updatedUser = db.adjustUserBalance(
+      req.params.id,
+      Number(amount),
+      type,
+      reason,
+      curr,
+      req.adminUsername || 'Admin'
+    );
 
     const { passwordHash: _, fundPasswordHash: __, ...publicUser } = updatedUser;
     res.json({ success: true, member: publicUser });
