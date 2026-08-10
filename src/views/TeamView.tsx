@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDate } from '../lib/dateUtils';
 import {
   Copy,
   Check,
@@ -382,7 +383,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ onNavigate }) => {
                         <span>Phone: {member.phoneMasked}</span>
                         <span className="flex items-center gap-1 text-[10px] text-slate-500">
                           <Calendar className="w-3 h-3 text-slate-500" />
-                          {new Date(member.joinedAt).toLocaleDateString()}
+                          {formatUtcDate(member.joinedAt)}
                         </span>
                       </div>
                     </div>

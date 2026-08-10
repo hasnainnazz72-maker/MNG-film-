@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDateTime } from '../lib/dateUtils';
 import {
   Film,
   Zap,
@@ -313,7 +314,7 @@ export const GrabOrderView: React.FC<GrabOrderViewProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="text-[10px] text-slate-500 text-right">
-                  {new Date(item.endTime || item.startTime || Date.now()).toUTCString()}
+                  {formatUtcDateTime(item.endTime || item.startTime || Date.now())}
                 </div>
               </div>
             ))}

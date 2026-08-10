@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDateTime } from '../lib/dateUtils';
 import {
   Shield,
   ShieldCheck,
@@ -701,7 +702,7 @@ export const AdminPanelView: React.FC = () => {
                       <p className="font-mono text-cyan-300 text-[11px]">
                         {isEtbRec ? 'Ref / TXID:' : 'TXID:'} {rec.transactionReference || rec.txid}
                       </p>
-                      <p className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</p>
+                      <p className="text-[10px] text-slate-500">{formatUtcDateTime(rec.createdAt)}</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -854,7 +855,7 @@ export const AdminPanelView: React.FC = () => {
 
                       <p className="text-[10px] text-slate-500">
                         User: <strong className="text-white">{wd.username}</strong> ({wd.userPhone}) | Date:{' '}
-                        {new Date(wd.createdAt).toLocaleString()}
+                        {formatUtcDateTime(wd.createdAt)}
                       </p>
                     </div>
 
@@ -940,7 +941,7 @@ export const AdminPanelView: React.FC = () => {
                   <span className="font-semibold text-white mr-2">{log.action}:</span>
                   <span className="text-slate-300">{log.details}</span>
                 </div>
-                <span className="text-[10px] text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>
+                <span className="text-[10px] text-slate-500">{formatUtcDateTime(log.createdAt)}</span>
               </div>
             ))}
           </div>
@@ -1006,7 +1007,7 @@ export const AdminPanelView: React.FC = () => {
                           Users: <strong className="text-white">{bk.userCount}</strong> | Transactions: <strong className="text-white">{bk.transactionCount}</strong> | Deposits: <strong className="text-white">{bk.rechargeCount}</strong> | Withdrawals: <strong className="text-white">{bk.withdrawalCount}</strong> | Size: <strong className="text-slate-300">{(bk.sizeBytes / 1024).toFixed(1)} KB</strong>
                         </p>
                         <p className="text-[10px] text-slate-500 font-mono">
-                          Created At: {new Date(bk.createdAt).toLocaleString()}
+                          Created At: {formatUtcDateTime(bk.createdAt)}
                         </p>
                       </div>
 

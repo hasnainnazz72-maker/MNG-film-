@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDateTime } from '../lib/dateUtils';
 import { History, ArrowDownCircle, ArrowUpCircle, Zap, RefreshCw } from 'lucide-react';
 
 export const TransactionHistoryView: React.FC = () => {
@@ -95,7 +96,7 @@ export const TransactionHistoryView: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white">{cleanTransactionDescription(tx.description)}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500">{new Date(tx.createdAt).toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-500">{formatUtcDateTime(tx.createdAt)}</p>
                 </div>
                 <div className="text-right">
                   <p className={`font-bold text-sm ${tx.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>

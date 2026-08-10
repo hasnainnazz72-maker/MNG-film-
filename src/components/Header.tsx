@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcTime } from '../lib/dateUtils';
 import { Bell, Shield, User as UserIcon, LogOut, Check, X, ShieldAlert } from 'lucide-react';
 
 interface HeaderProps {
@@ -158,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold text-cyan-300">{notif.title}</span>
                       <span className="text-[10px] text-slate-500">
-                        {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatUtcTime(notif.createdAt)}
                       </span>
                     </div>
                     <p className="text-xs leading-relaxed">{notif.message}</p>

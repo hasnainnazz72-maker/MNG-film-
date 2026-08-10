@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDateTime } from '../lib/dateUtils';
 import {
   Wallet,
   ArrowDownCircle,
@@ -288,7 +289,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
                       <p className="text-slate-400 font-mono text-[11px]">
                         {isEtb ? 'Ref Number:' : 'TXID:'} {rec.transactionReference || rec.txid}
                       </p>
-                      <p className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</p>
+                      <p className="text-[10px] text-slate-500">{formatUtcDateTime(rec.createdAt)}</p>
                     </div>
                     <div className="sm:text-right space-y-1">
                       {renderStatusBadge(rec.status)}
@@ -335,7 +336,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
                       ) : (
                         <p className="text-slate-400 font-mono text-[11px]">Address: {wd.walletAddress}</p>
                       )}
-                      <p className="text-[10px] text-slate-500">{new Date(wd.createdAt).toLocaleString()}</p>
+                      <p className="text-[10px] text-slate-500">{formatUtcDateTime(wd.createdAt)}</p>
                     </div>
                     <div className="sm:text-right space-y-1">
                       {renderStatusBadge(wd.status)}
@@ -365,7 +366,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
                 >
                   <div className="space-y-1">
                     <p className="font-semibold text-white">{cleanTransactionDescription(tx.description)}</p>
-                    <p className="text-[10px] text-slate-500">{new Date(tx.createdAt).toLocaleString()}</p>
+                    <p className="text-[10px] text-slate-500">{formatUtcDateTime(tx.createdAt)}</p>
                   </div>
                   <div className="text-right">
                     <p className={`font-bold ${tx.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>

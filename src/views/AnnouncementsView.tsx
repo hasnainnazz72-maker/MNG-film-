@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Bell, Calendar, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDate } from '../lib/dateUtils';
 
 export const AnnouncementsView: React.FC = () => {
   const { t } = useAuth();
@@ -37,7 +38,7 @@ export const AnnouncementsView: React.FC = () => {
               </div>
               <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
                 <Calendar className="w-3 h-3" />
-                {new Date(ann.createdAt).toLocaleDateString()}
+                {formatUtcDate(ann.createdAt)}
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{ann.content}</p>

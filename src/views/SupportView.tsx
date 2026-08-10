@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { formatUtcDateTime, formatUtcTime } from '../lib/dateUtils';
 import { Headphones, Send, Plus, MessageSquare, Clock, CheckCircle2, RotateCw } from 'lucide-react';
 
 export const SupportView: React.FC = () => {
@@ -161,7 +162,7 @@ export const SupportView: React.FC = () => {
                       {ticket.status}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500">{new Date(ticket.updatedAt).toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-500">{formatUtcDateTime(ticket.updatedAt)}</p>
                 </div>
               ))
             )}
@@ -198,7 +199,7 @@ export const SupportView: React.FC = () => {
                       >
                         <p className="font-bold text-[10px] text-slate-400">{isAdmin ? 'Support Agent' : 'You'}</p>
                         <p>{m.text}</p>
-                        <p className="text-[9px] text-slate-500 text-right">{new Date(m.timestamp).toLocaleTimeString()}</p>
+                        <p className="text-[9px] text-slate-500 text-right">{formatUtcTime(m.timestamp)}</p>
                       </div>
                     </div>
                   );
