@@ -109,7 +109,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ onNavigate }) => {
   const currLabel = isEtbUser ? 'ETB' : 'USDT';
 
   const referralCodeStr = stats.referralCode || user?.referralCode || 'N584281';
-  const referralLink = `https://mngfilm.net/#/register?ref=${referralCodeStr}`;
+  const referralLink = `https://mngfilm.uk/#/register?ref=${referralCodeStr}`;
 
   const handleCopy = (text: string, type: 'code' | 'link') => {
     navigator.clipboard.writeText(text);
