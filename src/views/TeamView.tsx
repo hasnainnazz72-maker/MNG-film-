@@ -102,6 +102,10 @@ export const TeamView: React.FC<TeamViewProps> = ({ onNavigate }) => {
       .finally(() => setLoading(false));
   }, [token]);
 
+  const eligibleBalance = Math.max(user?.balance || 0, user?.investment || 0);
+  const isEtbUser = eligibleBalance >= 200 || (user?.balance || 0) >= 200;
+  const currLabel = isEtbUser ? 'ETB' : 'USDT';
+
   const referralCodeStr = stats.referralCode || user?.referralCode || 'N584281';
   const referralLink = `https://mngfilm.net/#/register?ref=${referralCodeStr}`;
 
@@ -213,15 +217,15 @@ export const TeamView: React.FC<TeamViewProps> = ({ onNavigate }) => {
           <p className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">
             {stats.teamDeposit.toFixed(0)}
           </p>
-          <p className="text-[9px] text-slate-500">USDT</p>
+          <p className="text-[9px] text-slate-500">{currLabel}</p>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-center space-y-1 shadow-lg">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Commission</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Est. Daily Task Rebate</p>
           <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
-            {stats.estimatedCommission.toFixed(1)}
+            {stats.estimatedCommission.toFixed(2)}
           </p>
-          <p className="text-[9px] text-slate-500">USDT Rebate</p>
+          <p className="text-[9px] text-slate-500">{currLabel} Task Rebate</p>
         </div>
       </div>
 

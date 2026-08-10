@@ -887,6 +887,10 @@ class Database {
     req.adminNote = adminNote;
     req.processedAt = new Date().toISOString();
 
+    const isEtb = req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
+    const methodLabel = isEtb ? 'ETB Bank Transfer' : req.network;
+    const currencyLabel = isEtb ? 'ETB' : 'USDT';
+
     if (status === 'approved') {
       const user = this.getUserById(req.userId);
       if (user) {
@@ -900,10 +904,6 @@ class Database {
             this.setFirestoreDoc('users', referrer.id, referrer);
           }
         }
-
-        const isEtb = req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
-        const methodLabel = isEtb ? 'ETB Bank Transfer' : req.network;
-        const currencyLabel = isEtb ? 'ETB' : 'USDT';
 
         this.addTransaction({
           id: 'tx_' + Date.now(),
@@ -934,7 +934,7 @@ class Database {
         id: 'notif_' + Date.now(),
         userId: req.userId,
         title: 'Recharge Rejected',
-        message: `Your deposit request of ${req.amount} USDT was rejected. Note: ${adminNote || 'Invalid TXID/Payment proof'}.`,
+        message: `Your deposit request of ${req.amount} ${currencyLabel} was rejected. Note: ${adminNote || 'Invalid TXID/Payment proof'}.`,
         type: 'error',
         isRead: false,
         createdAt: new Date().toISOString(),
@@ -1126,6 +1126,8 @@ class Database {
     const plan = VIP_PLANS.find(p => p.level === user.vipLevel) || VIP_PLANS[0];
 
     const eligibleBalance = Math.max(user.balance || 0, user.investment || 0);
+    const isEtbTask = eligibleBalance >= 200 || user.balance >= 200;
+    const taskCurrency = isEtbTask ? 'ETB' : 'USDT';
 
     if (user.isGrabActive && user.grabEndTime) {
       if (nowMs >= user.grabEndTime) {
@@ -1163,12 +1165,13 @@ class Database {
           type: 'grab_profit',
           amount: profitAmount,
           balanceAfter: user.balance,
-          description: `VIP ${user.vipLevel} Daily Compound Profit (${plan.dailyProfitPercent}%) [UTC Cycle: ${currentUtcCycle}]`,
+          description: `VIP ${user.vipLevel} Daily Compound Profit (${plan.dailyProfitPercent}%) [${taskCurrency}] [UTC Cycle: ${currentUtcCycle}]`,
           status: 'completed',
           createdAt: now.toISOString(),
         });
 
-        // Team Commissions
+        // Team Task Commissions (ONLY generated when referred member completes qualifying task)
+        // Currency strictly matches member's task currency (ETB or USDT) without conversion
         if (user.referredByCode) {
           const level1User = this.getUserByReferralCode(user.referredByCode);
           if (level1User) {
@@ -1178,14 +1181,25 @@ class Database {
               level1User.todayProfit = Number(((level1User.todayProfit || 0) + l1Bonus).toFixed(4));
               level1User.totalProfit = Number(((level1User.totalProfit || 0) + l1Bonus).toFixed(4));
               this.setFirestoreDoc('users', level1User.id, level1User);
+              
               this.addTransaction({
                 id: 'tx_ref1_' + Date.now(),
                 userId: level1User.id,
                 type: 'referral_bonus',
                 amount: l1Bonus,
                 balanceAfter: level1User.balance,
-                description: `Level 1 Team Grab Bonus (14% from ${user.username})`,
+                description: `Level 1 Team Grab Bonus (14% from ${user.username}) [${taskCurrency}]`,
                 status: 'completed',
+                createdAt: now.toISOString(),
+              });
+
+              this.addNotification({
+                id: 'notif_ref1_' + Date.now(),
+                userId: level1User.id,
+                title: `Level 1 Team Commission Earned (${taskCurrency})`,
+                message: `You earned ${l1Bonus} ${taskCurrency} (14%) team task commission from ${user.username}'s completed Grab Order.`,
+                type: 'success',
+                isRead: false,
                 createdAt: now.toISOString(),
               });
             }
@@ -1199,14 +1213,25 @@ class Database {
                   level2User.todayProfit = Number(((level2User.todayProfit || 0) + l2Bonus).toFixed(4));
                   level2User.totalProfit = Number(((level2User.totalProfit || 0) + l2Bonus).toFixed(4));
                   this.setFirestoreDoc('users', level2User.id, level2User);
+
                   this.addTransaction({
                     id: 'tx_ref2_' + Date.now(),
                     userId: level2User.id,
                     type: 'referral_bonus',
                     amount: l2Bonus,
                     balanceAfter: level2User.balance,
-                    description: `Level 2 Team Grab Bonus (7% from ${user.username})`,
+                    description: `Level 2 Team Grab Bonus (7% from ${user.username}) [${taskCurrency}]`,
                     status: 'completed',
+                    createdAt: now.toISOString(),
+                  });
+
+                  this.addNotification({
+                    id: 'notif_ref2_' + Date.now(),
+                    userId: level2User.id,
+                    title: `Level 2 Team Commission Earned (${taskCurrency})`,
+                    message: `You earned ${l2Bonus} ${taskCurrency} (7%) team task commission from ${user.username}'s completed Grab Order.`,
+                    type: 'success',
+                    isRead: false,
                     createdAt: now.toISOString(),
                   });
                 }
@@ -1220,14 +1245,25 @@ class Database {
                       level3User.todayProfit = Number(((level3User.todayProfit || 0) + l3Bonus).toFixed(4));
                       level3User.totalProfit = Number(((level3User.totalProfit || 0) + l3Bonus).toFixed(4));
                       this.setFirestoreDoc('users', level3User.id, level3User);
+
                       this.addTransaction({
                         id: 'tx_ref3_' + Date.now(),
                         userId: level3User.id,
                         type: 'referral_bonus',
                         amount: l3Bonus,
                         balanceAfter: level3User.balance,
-                        description: `Level 3 Team Grab Bonus (3% from ${user.username})`,
+                        description: `Level 3 Team Grab Bonus (3% from ${user.username}) [${taskCurrency}]`,
                         status: 'completed',
+                        createdAt: now.toISOString(),
+                      });
+
+                      this.addNotification({
+                        id: 'notif_ref3_' + Date.now(),
+                        userId: level3User.id,
+                        title: `Level 3 Team Commission Earned (${taskCurrency})`,
+                        message: `You earned ${l3Bonus} ${taskCurrency} (3%) team task commission from ${user.username}'s completed Grab Order.`,
+                        type: 'success',
+                        isRead: false,
                         createdAt: now.toISOString(),
                       });
                     }

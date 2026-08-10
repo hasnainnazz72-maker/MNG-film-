@@ -576,8 +576,27 @@ app.get('/api/team/stats', authenticateUserToken, (req: AuthenticatedRequest, re
   const totalTeamCount = levelAMembers.length + levelBMembers.length + levelCMembers.length;
   const totalTeamDeposit = levelADeposit + levelBDeposit + levelCDeposit;
 
-  // Calculate estimated team commission (A: 14%, B: 7%, C: 3%)
-  const estimatedCommission = (levelADeposit * 0.14) + (levelBDeposit * 0.07) + (levelCDeposit * 0.03);
+  // Calculate estimated daily team task commission (Level A: 14%, Level B: 7%, Level C: 3% of member task daily profits)
+  // Commission is strictly earned from task completion, never from deposits
+  const levelAEstProfit = levelAUsers.reduce((sum, u) => {
+    const plan = VIP_PLANS.find(p => p.level === u.vipLevel) || VIP_PLANS[0];
+    const elBal = Math.max(u.balance || 0, u.investment || 0);
+    return sum + ((elBal * plan.dailyProfitPercent) / 100) * 0.14;
+  }, 0);
+
+  const levelBEstProfit = levelBUsers.reduce((sum, u) => {
+    const plan = VIP_PLANS.find(p => p.level === u.vipLevel) || VIP_PLANS[0];
+    const elBal = Math.max(u.balance || 0, u.investment || 0);
+    return sum + ((elBal * plan.dailyProfitPercent) / 100) * 0.07;
+  }, 0);
+
+  const levelCEstProfit = levelCUsers.reduce((sum, u) => {
+    const plan = VIP_PLANS.find(p => p.level === u.vipLevel) || VIP_PLANS[0];
+    const elBal = Math.max(u.balance || 0, u.investment || 0);
+    return sum + ((elBal * plan.dailyProfitPercent) / 100) * 0.03;
+  }, 0);
+
+  const estimatedCommission = Number((levelAEstProfit + levelBEstProfit + levelCEstProfit).toFixed(2));
 
   res.json({
     referralCode: user.referralCode,
