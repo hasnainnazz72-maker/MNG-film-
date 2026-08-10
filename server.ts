@@ -440,8 +440,9 @@ app.post('/api/wallet/withdraw', authenticateUserToken, async (req: Authenticate
       return res.status(400).json({ error: 'Minimum USDT withdrawal amount is 10 USDT.' });
     }
 
-    if (user.balance < numAmount) {
-      return res.status(400).json({ error: `Insufficient available balance. Current balance: ${user.balance} ${isEtb ? 'ETB' : 'USDT'}.` });
+    const availBal = isEtb ? (user.balanceEtb || 0) : (user.balance || 0);
+    if (availBal < numAmount) {
+      return res.status(400).json({ error: `Insufficient available balance. Current balance: ${availBal.toFixed(2)} ${isEtb ? 'ETB' : 'USDT'}.` });
     }
 
     const fee = Number(((numAmount * 8) / 100).toFixed(2));

@@ -72,8 +72,10 @@ export const WithdrawalView: React.FC<WithdrawalViewProps> = ({ onNavigate }) =>
       return;
     }
 
-    if (!user || user.balance < numAmount) {
-      setError(`Insufficient available balance for withdrawal.`);
+    const currentAvailableBal = isEtb ? (user?.balanceEtb || 0) : (user?.balance || 0);
+
+    if (!user || currentAvailableBal < numAmount) {
+      setError(`Insufficient available ${isEtb ? 'ETB' : 'USDT'} balance for withdrawal.`);
       return;
     }
 
@@ -168,14 +170,19 @@ export const WithdrawalView: React.FC<WithdrawalViewProps> = ({ onNavigate }) =>
         {/* User Available Balance Indicator */}
         <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-400 font-medium">Available Wallet Balance</p>
+            <p className="text-xs text-slate-400 font-medium">
+              Available {isEtb ? 'ETB Bank' : 'USDT'} Balance
+            </p>
             <p className="text-xl font-bold text-amber-300">
-              {(user?.balance || 0).toFixed(2)} {isEtb ? 'ETB / Balance' : 'USDT'}
+              {(isEtb ? (user?.balanceEtb || 0) : (user?.balance || 0)).toFixed(2)} {isEtb ? 'ETB' : 'USDT'}
+            </p>
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+              {isEtb ? `USDT Balance: ${(user?.balance || 0).toFixed(2)} USDT` : `ETB Balance: ${(user?.balanceEtb || 0).toFixed(2)} ETB`}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => setAmount((user?.balance || 0).toString())}
+            onClick={() => setAmount((isEtb ? (user?.balanceEtb || 0) : (user?.balance || 0)).toString())}
             className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs border border-amber-500/40 transition-colors"
           >
             Max

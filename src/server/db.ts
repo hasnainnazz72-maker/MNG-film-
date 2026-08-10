@@ -132,26 +132,38 @@ function normalizeUser(rawUser: any): StoredUser {
   const cleanPhone = (rawUser.phone || '').toString().trim();
   const countryCode = rawUser.countryCode || '+1';
 
-  let balanceUsdt = typeof rawUser.balance === 'number' ? rawUser.balance : 0;
-  let balanceEtb = typeof rawUser.balanceEtb === 'number' ? rawUser.balanceEtb : 0;
+  let rawBal = typeof rawUser.balance === 'number' ? rawUser.balance : 0;
+  let rawBalEtb = typeof rawUser.balanceEtb === 'number' ? rawUser.balanceEtb : 0;
 
-  // Migration for existing users:
-  // If user previously recharged in ETB or has balance >= 200 and balanceEtb is unassigned,
-  // restore/move their ETB amount to balanceEtb and reset balanceUsdt to 0.
-  if (rawUser.balanceEtb === undefined || rawUser.balanceEtb === null) {
-    if (balanceUsdt >= 200) {
-      balanceEtb = balanceUsdt;
+  let balanceUsdt = rawBal;
+  let balanceEtb = rawBalEtb;
+
+  if (rawBalEtb > 0) {
+    if (rawBal >= rawBalEtb) {
+      balanceUsdt = Number((rawBal - rawBalEtb).toFixed(4));
+    } else {
       balanceUsdt = 0;
     }
+  } else if ((rawUser.balanceEtb === undefined || rawUser.balanceEtb === null) && rawBal >= 200) {
+    balanceEtb = rawBal;
+    balanceUsdt = 0;
   }
 
-  let investmentUsdt = typeof rawUser.investment === 'number' ? rawUser.investment : 0;
-  let investmentEtb = typeof rawUser.investmentEtb === 'number' ? rawUser.investmentEtb : 0;
-  if (rawUser.investmentEtb === undefined || rawUser.investmentEtb === null) {
-    if (investmentUsdt >= 200) {
-      investmentEtb = investmentUsdt;
+  let rawInv = typeof rawUser.investment === 'number' ? rawUser.investment : 0;
+  let rawInvEtb = typeof rawUser.investmentEtb === 'number' ? rawUser.investmentEtb : 0;
+
+  let investmentUsdt = rawInv;
+  let investmentEtb = rawInvEtb;
+
+  if (rawInvEtb > 0) {
+    if (rawInv >= rawInvEtb) {
+      investmentUsdt = Number((rawInv - rawInvEtb).toFixed(4));
+    } else {
       investmentUsdt = 0;
     }
+  } else if ((rawUser.investmentEtb === undefined || rawUser.investmentEtb === null) && rawInv >= 200) {
+    investmentEtb = rawInv;
+    investmentUsdt = 0;
   }
 
   let todayProfitUsdt = typeof rawUser.todayProfit === 'number' ? rawUser.todayProfit : 0;

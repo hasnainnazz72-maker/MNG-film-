@@ -24,7 +24,9 @@ interface TeamMember {
   phoneMasked: string;
   vipLevel: number;
   investment: number;
+  investmentEtb?: number;
   balance: number;
+  balanceEtb?: number;
   joinedAt: string;
   status: string;
   level: 'A' | 'B' | 'C';
@@ -389,12 +391,18 @@ export const TeamView: React.FC<TeamViewProps> = ({ onNavigate }) => {
                   <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-slate-800/80 pt-2 sm:pt-0">
                     <div className="text-left sm:text-right">
                       <p className="text-[10px] text-slate-500">Recharge / Capital</p>
-                      <p className="font-mono font-black text-emerald-400 text-xs">{member.investment} USDT</p>
+                      <p className="font-mono font-black text-emerald-400 text-xs">{(member.investment || 0).toFixed(2)} USDT</p>
+                      {member.investmentEtb !== undefined && member.investmentEtb !== null && (
+                        <p className="font-mono font-bold text-emerald-300 text-[10px]">{(member.investmentEtb || 0).toFixed(2)} ETB</p>
+                      )}
                     </div>
 
                     <div className="text-right">
                       <p className="text-[10px] text-slate-500">Current Balance</p>
-                      <p className="font-mono font-black text-cyan-300 text-xs">{member.balance.toFixed(2)} USDT</p>
+                      <p className="font-mono font-black text-cyan-300 text-xs">{(member.balance || 0).toFixed(2)} USDT</p>
+                      {member.balanceEtb !== undefined && member.balanceEtb !== null && (
+                        <p className="font-mono font-bold text-emerald-300 text-[10px]">{(member.balanceEtb || 0).toFixed(2)} ETB</p>
+                      )}
                     </div>
                   </div>
                 </div>

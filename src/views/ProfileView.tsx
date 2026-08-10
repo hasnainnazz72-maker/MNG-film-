@@ -214,22 +214,37 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
           <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <p className="text-[10px] text-slate-400 font-medium">Investment Balance</p>
-            <p className="text-lg font-black text-cyan-400 font-mono mt-0.5">
-              {(user?.investment || 0).toFixed(2)} <span className="text-xs font-normal">USDT</span>
+            <p className="text-[10px] text-slate-400 font-medium">Available Balances</p>
+            <p className="text-base font-black text-cyan-400 font-mono mt-0.5">
+              {(user?.balance || 0).toFixed(2)} <span className="text-xs font-normal text-slate-300">USDT</span>
             </p>
+            {(user?.balanceEtb !== undefined && user?.balanceEtb !== null) && (
+              <p className="text-xs font-bold text-emerald-400 font-mono">
+                {(user?.balanceEtb || 0).toFixed(2)} <span className="text-[10px] font-normal text-slate-300">ETB</span>
+              </p>
+            )}
           </div>
           <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
             <p className="text-[10px] text-slate-400 font-medium">Today's Profit</p>
-            <p className="text-lg font-black text-emerald-400 font-mono mt-0.5">
+            <p className="text-base font-black text-emerald-400 font-mono mt-0.5">
               +{(user?.todayProfit || 0).toFixed(2)} <span className="text-xs font-normal">USDT</span>
             </p>
+            {(user?.todayProfitEtb !== undefined && user?.todayProfitEtb !== null) && (
+              <p className="text-xs font-bold text-emerald-300 font-mono">
+                +{(user?.todayProfitEtb || 0).toFixed(2)} <span className="text-[10px] font-normal">ETB</span>
+              </p>
+            )}
           </div>
           <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 col-span-2 sm:col-span-1">
             <p className="text-[10px] text-slate-400 font-medium">Total Profit Earned</p>
-            <p className="text-lg font-black text-amber-300 font-mono mt-0.5">
+            <p className="text-base font-black text-amber-300 font-mono mt-0.5">
               {(user?.totalProfit || 0).toFixed(2)} <span className="text-xs font-normal">USDT</span>
             </p>
+            {(user?.totalProfitEtb !== undefined && user?.totalProfitEtb !== null) && (
+              <p className="text-xs font-bold text-amber-400 font-mono">
+                {(user?.totalProfitEtb || 0).toFixed(2)} <span className="text-[10px] font-normal">ETB</span>
+              </p>
+            )}
           </div>
         </div>
 

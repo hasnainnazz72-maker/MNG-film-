@@ -100,10 +100,13 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
               {/* User Balance Chip */}
               <div
                 onClick={() => onNavigate('wallet')}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/30 cursor-pointer hover:border-cyan-500 transition-colors"
+                className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/30 cursor-pointer hover:border-cyan-500 transition-colors"
               >
-                <span className="text-[11px] text-slate-400 font-medium">Balance:</span>
-                <span className="text-xs font-bold text-cyan-400">{user.balance.toFixed(2)} USDT</span>
+                <span className="text-[11px] text-slate-400 font-medium">Bal:</span>
+                <span className="text-xs font-bold text-cyan-400">{(user.balance || 0).toFixed(2)} USDT</span>
+                {(user.balanceEtb !== undefined && user.balanceEtb !== null) && (
+                  <span className="text-xs font-bold text-emerald-400">{(user.balanceEtb || 0).toFixed(2)} ETB</span>
+                )}
               </div>
             </>
           )}

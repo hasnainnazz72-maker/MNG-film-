@@ -135,46 +135,55 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
           </button>
         </div>
 
-        {/* 6 Key Wallet Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-1">
-            <p className="text-xs font-medium text-slate-400">{t('availableBalance')}</p>
-            <p className="text-2xl font-black text-cyan-400">{(user?.balance || 0).toFixed(2)} USDT</p>
-          </div>
-
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-1">
-            <p className="text-xs font-medium text-slate-400">{t('investmentAmount')}</p>
-            <p className="text-2xl font-black text-white">{(user?.investment || 0).toFixed(2)} USDT</p>
-          </div>
-
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-1">
-            <p className="text-xs font-medium text-slate-400">{t('todayProfit')}</p>
-            <p className="text-2xl font-black text-emerald-400">+{(user?.todayProfit || 0).toFixed(2)} USDT</p>
-          </div>
-
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-1">
-            <p className="text-xs font-medium text-slate-400">{t('totalProfit')}</p>
-            <p className="text-2xl font-black text-emerald-400">+{(user?.totalProfit || 0).toFixed(2)} USDT</p>
-          </div>
-
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-1">
-            <p className="text-xs font-medium text-slate-400">{t('currentVipLevel')}</p>
-            <div className="flex items-center gap-1.5">
-              <Crown className="w-4 h-4 text-amber-400" />
-              <p className="text-2xl font-black text-amber-300">VIP {user?.vipLevel || 1}</p>
+        {/* Dual Wallet Balances Grid: USDT & ETB */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* USDT Wallet Card */}
+          <div className="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+              <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5" />
+                <span>USDT Crypto Wallet</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] font-bold">USDT</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <div>
+                <p className="text-[10px] text-slate-400">Available Balance</p>
+                <p className="text-xl font-black text-white">{(user?.balance || 0).toFixed(2)} <span className="text-xs text-cyan-400">USDT</span></p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-slate-400">Capital Investment</p>
+                <p className="text-sm font-bold text-slate-200">{(user?.investment || 0).toFixed(2)} USDT</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 font-mono">
+              <span>Today: <span className="text-emerald-400 font-bold">+{(user?.todayProfit || 0).toFixed(2)} USDT</span></span>
+              <span>Total: <span className="text-amber-300 font-bold">+{(user?.totalProfit || 0).toFixed(2)} USDT</span></span>
             </div>
           </div>
 
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 space-y-1">
-            <p className="text-xs font-medium text-slate-400">{t('todayGrabStatus')}</p>
-            <div className="pt-1">
-              {grabStatus.isGrabActive ? (
-                <span className="text-xs font-bold text-cyan-400 animate-pulse">Matching Order...</span>
-              ) : grabStatus.cooldownRemainingMs > 0 ? (
-                <span className="text-xs font-bold text-emerald-400">Completed Today</span>
-              ) : (
-                <span className="text-xs font-bold text-amber-400">Ready to Grab</span>
-              )}
+          {/* ETB Wallet Card */}
+          <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 space-y-3 shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5" />
+                <span>ETB Bank Account Wallet</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[10px] font-bold">ETB</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <div>
+                <p className="text-[10px] text-slate-400">Available Balance</p>
+                <p className="text-xl font-black text-white">{(user?.balanceEtb || 0).toFixed(2)} <span className="text-xs text-emerald-400">ETB</span></p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-slate-400">Capital Investment</p>
+                <p className="text-sm font-bold text-slate-200">{(user?.investmentEtb || 0).toFixed(2)} ETB</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 font-mono">
+              <span>Today: <span className="text-emerald-400 font-bold">+{(user?.todayProfitEtb || 0).toFixed(2)} ETB</span></span>
+              <span>Total: <span className="text-amber-300 font-bold">+{(user?.totalProfitEtb || 0).toFixed(2)} ETB</span></span>
             </div>
           </div>
         </div>
