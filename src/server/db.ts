@@ -1159,15 +1159,15 @@ class Database {
 
     const eligibleBalanceEtb = Math.max(user.balanceEtb || 0, user.investmentEtb || 0);
     const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
-    const isEtbUser = eligibleBalanceEtb >= 200 || (user.balanceEtb || 0) >= 200;
-    const minRequiredBalance = isEtbUser ? 4000 : 20;
-    const eligibleBalance = isEtbUser ? eligibleBalanceEtb : eligibleBalanceUsdt;
 
-    if (eligibleBalance < minRequiredBalance) {
+    const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
+    const hasEligibleEtb = eligibleBalanceEtb >= 4000;
+
+    const isGrabEligible = hasEligibleUsdt || hasEligibleEtb;
+
+    if (!isGrabEligible) {
       throw new Error(
-        isEtbUser
-          ? `Minimum eligible balance of 4,000 ETB is required to start Grab Order. Current balance: ${eligibleBalance.toFixed(2)} ETB.`
-          : `Minimum eligible balance of 20 USDT is required to start Grab Order. Current balance: ${eligibleBalance.toFixed(2)} USDT.`
+        `Minimum eligible balance of 20 USDT or 4,000 ETB is required to start Grab Order. Current balances: ${eligibleBalanceUsdt.toFixed(2)} USDT / ${eligibleBalanceEtb.toFixed(2)} ETB.`
       );
     }
 
@@ -1217,7 +1217,11 @@ class Database {
 
     const eligibleBalanceEtb = Math.max(user.balanceEtb || 0, user.investmentEtb || 0);
     const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
-    const isEtbTask = eligibleBalanceEtb >= 200 || (user.balanceEtb || 0) >= 200;
+
+    const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
+    const hasEligibleEtb = eligibleBalanceEtb >= 4000;
+
+    const isEtbTask = hasEligibleEtb || (!hasEligibleUsdt && eligibleBalanceEtb > 0);
     const taskCurrency = isEtbTask ? 'ETB' : 'USDT';
     const eligibleBalance = isEtbTask ? eligibleBalanceEtb : eligibleBalanceUsdt;
 
@@ -1400,12 +1404,12 @@ class Database {
       }
     }
 
-    const minRequiredBalance = isEtbTask ? 4000 : 20;
+    const isMinBalanceMet = hasEligibleUsdt || hasEligibleEtb;
 
     let canGrab = true;
     let cooldownRemainingMs = 0;
 
-    if (eligibleBalance < minRequiredBalance) {
+    if (!isMinBalanceMet) {
       canGrab = false;
     } else if (user.isGrabActive) {
       canGrab = false;

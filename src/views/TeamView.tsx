@@ -104,8 +104,8 @@ export const TeamView: React.FC<TeamViewProps> = ({ onNavigate }) => {
       .finally(() => setLoading(false));
   }, [token]);
 
-  const eligibleBalance = Math.max(user?.balance || 0, user?.investment || 0);
-  const isEtbUser = eligibleBalance >= 200 || (user?.balance || 0) >= 200;
+  const eligibleBalanceEtb = Math.max(user?.balanceEtb || 0, user?.investmentEtb || 0);
+  const isEtbUser = eligibleBalanceEtb > 0 || (user?.balanceEtb || 0) > 0;
   const currLabel = isEtbUser ? 'ETB' : 'USDT';
 
   const referralCodeStr = stats.referralCode || user?.referralCode || 'N584281';
