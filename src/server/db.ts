@@ -131,17 +131,61 @@ function initFirestore(): Firestore | null {
 function normalizeUser(rawUser: any): StoredUser {
   const cleanPhone = (rawUser.phone || '').toString().trim();
   const countryCode = rawUser.countryCode || '+1';
-  
+
+  let balanceUsdt = typeof rawUser.balance === 'number' ? rawUser.balance : 0;
+  let balanceEtb = typeof rawUser.balanceEtb === 'number' ? rawUser.balanceEtb : 0;
+
+  // Migration for existing users:
+  // If user previously recharged in ETB or has balance >= 200 and balanceEtb is unassigned,
+  // restore/move their ETB amount to balanceEtb and reset balanceUsdt to 0.
+  if (rawUser.balanceEtb === undefined || rawUser.balanceEtb === null) {
+    if (balanceUsdt >= 200) {
+      balanceEtb = balanceUsdt;
+      balanceUsdt = 0;
+    }
+  }
+
+  let investmentUsdt = typeof rawUser.investment === 'number' ? rawUser.investment : 0;
+  let investmentEtb = typeof rawUser.investmentEtb === 'number' ? rawUser.investmentEtb : 0;
+  if (rawUser.investmentEtb === undefined || rawUser.investmentEtb === null) {
+    if (investmentUsdt >= 200) {
+      investmentEtb = investmentUsdt;
+      investmentUsdt = 0;
+    }
+  }
+
+  let todayProfitUsdt = typeof rawUser.todayProfit === 'number' ? rawUser.todayProfit : 0;
+  let todayProfitEtb = typeof rawUser.todayProfitEtb === 'number' ? rawUser.todayProfitEtb : 0;
+  if (rawUser.todayProfitEtb === undefined || rawUser.todayProfitEtb === null) {
+    if (balanceEtb >= 200) {
+      todayProfitEtb = todayProfitUsdt;
+      todayProfitUsdt = 0;
+    }
+  }
+
+  let totalProfitUsdt = typeof rawUser.totalProfit === 'number' ? rawUser.totalProfit : 0;
+  let totalProfitEtb = typeof rawUser.totalProfitEtb === 'number' ? rawUser.totalProfitEtb : 0;
+  if (rawUser.totalProfitEtb === undefined || rawUser.totalProfitEtb === null) {
+    if (balanceEtb >= 200) {
+      totalProfitEtb = totalProfitUsdt;
+      totalProfitUsdt = 0;
+    }
+  }
+
   return {
     id: rawUser.id || 'usr_' + Date.now() + Math.random().toString(36).substring(2, 6),
     username: rawUser.username || `Member_${cleanPhone.slice(-4) || '0000'}`,
     phone: cleanPhone,
     countryCode,
     email: (rawUser.email || `user_${cleanPhone || Date.now()}@nexgrab.net`).toLowerCase().trim(),
-    balance: typeof rawUser.balance === 'number' ? rawUser.balance : 0,
-    investment: typeof rawUser.investment === 'number' ? rawUser.investment : 0,
-    todayProfit: typeof rawUser.todayProfit === 'number' ? rawUser.todayProfit : 0,
-    totalProfit: typeof rawUser.totalProfit === 'number' ? rawUser.totalProfit : 0,
+    balance: balanceUsdt,
+    balanceEtb: balanceEtb,
+    investment: investmentUsdt,
+    investmentEtb: investmentEtb,
+    todayProfit: todayProfitUsdt,
+    todayProfitEtb: todayProfitEtb,
+    totalProfit: totalProfitUsdt,
+    totalProfitEtb: totalProfitEtb,
     vipLevel: (rawUser.vipLevel && rawUser.vipLevel >= 1 && rawUser.vipLevel <= 5) ? rawUser.vipLevel : 1,
     isGrabActive: !!rawUser.isGrabActive,
     lastGrabTimestamp: rawUser.lastGrabTimestamp || null,
@@ -887,15 +931,20 @@ class Database {
     req.adminNote = adminNote;
     req.processedAt = new Date().toISOString();
 
-    const isEtb = req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
+    const isEtb = req.currency === 'ETB' || req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
     const methodLabel = isEtb ? 'ETB Bank Transfer' : req.network;
     const currencyLabel = isEtb ? 'ETB' : 'USDT';
 
     if (status === 'approved') {
       const user = this.getUserById(req.userId);
       if (user) {
-        user.balance += req.amount;
-        user.investment += req.amount;
+        if (isEtb) {
+          user.balanceEtb = Number(((user.balanceEtb || 0) + req.amount).toFixed(4));
+          user.investmentEtb = Math.max(user.investmentEtb || 0, user.balanceEtb);
+        } else {
+          user.balance = Number(((user.balance || 0) + req.amount).toFixed(4));
+          user.investment = Math.max(user.investment || 0, user.balance);
+        }
 
         if (user.referredByCode) {
           const referrer = this.getUserByReferralCode(user.referredByCode);
@@ -905,12 +954,15 @@ class Database {
           }
         }
 
+        const currentBal = isEtb ? user.balanceEtb : user.balance;
+
         this.addTransaction({
           id: 'tx_' + Date.now(),
           userId: user.id,
           type: 'recharge',
           amount: req.amount,
-          balanceAfter: user.balance,
+          currency: currencyLabel,
+          balanceAfter: currentBal,
           description: `${methodLabel} Recharge (${req.amount} ${currencyLabel}) Approved`,
           status: 'completed',
           createdAt: new Date().toISOString(),
@@ -920,7 +972,7 @@ class Database {
           id: 'notif_' + Date.now(),
           userId: user.id,
           title: 'Recharge Approved!',
-          message: `Your deposit of ${req.amount} ${currencyLabel} via ${methodLabel} has been approved and credited.`,
+          message: `Your deposit of ${req.amount} ${currencyLabel} via ${methodLabel} has been approved and credited to your ${currencyLabel} Balance.`,
           type: 'success',
           isRead: false,
           createdAt: new Date().toISOString(),
@@ -957,23 +1009,34 @@ class Database {
 
   addWithdrawal(request: WithdrawalRequest): WithdrawalRequest {
     const user = this.getUserById(request.userId);
-    if (!user || user.balance < request.amount) {
-      throw new Error('Insufficient wallet balance for withdrawal request');
-    }
+    if (!user) throw new Error('User not found');
 
-    user.balance -= request.amount;
-    this.data.withdrawalRequests.unshift(request);
-
-    const isEtb = request.network === 'ETB_BANK' || request.paymentMethod === 'ETB_BANK';
+    const isEtb = request.currency === 'ETB' || request.network === 'ETB_BANK' || request.paymentMethod === 'ETB_BANK';
     const currencyLabel = isEtb ? 'ETB' : 'USDT';
     const methodDesc = isEtb ? `ETB Bank (${request.bankName || 'Ethiopian Bank'})` : request.network;
+
+    if (isEtb) {
+      if ((user.balanceEtb || 0) < request.amount) {
+        throw new Error(`Insufficient ETB balance for withdrawal request. Current ETB balance: ${user.balanceEtb || 0} ETB.`);
+      }
+      user.balanceEtb = Number(((user.balanceEtb || 0) - request.amount).toFixed(4));
+    } else {
+      if ((user.balance || 0) < request.amount) {
+        throw new Error(`Insufficient USDT balance for withdrawal request. Current USDT balance: ${user.balance || 0} USDT.`);
+      }
+      user.balance = Number(((user.balance || 0) - request.amount).toFixed(4));
+    }
+
+    this.data.withdrawalRequests.unshift(request);
+    const currentBal = isEtb ? user.balanceEtb : user.balance;
 
     this.addTransaction({
       id: 'tx_' + Date.now(),
       userId: user.id,
       type: 'withdrawal',
       amount: -request.amount,
-      balanceAfter: user.balance,
+      currency: currencyLabel,
+      balanceAfter: currentBal,
       description: `Withdrawal Request ${request.amount} ${currencyLabel} via ${methodDesc} (Fee: ${request.fee} ${currencyLabel})`,
       status: 'pending',
       createdAt: new Date().toISOString(),
@@ -994,7 +1057,7 @@ class Database {
     req.processedAt = new Date().toISOString();
 
     const user = this.getUserById(req.userId);
-    const isEtb = req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
+    const isEtb = req.currency === 'ETB' || req.network === 'ETB_BANK' || req.paymentMethod === 'ETB_BANK';
     const currencyLabel = isEtb ? 'ETB' : 'USDT';
     const destinationDesc = isEtb
       ? `${req.bankName || 'ETB Bank'} - ${req.accountNumber || ''}`
@@ -1014,13 +1077,20 @@ class Database {
       }
     } else {
       if (user) {
-        user.balance += req.amount;
+        if (isEtb) {
+          user.balanceEtb = Number(((user.balanceEtb || 0) + req.amount).toFixed(4));
+        } else {
+          user.balance = Number(((user.balance || 0) + req.amount).toFixed(4));
+        }
+        const currentBal = isEtb ? user.balanceEtb : user.balance;
+
         this.addTransaction({
           id: 'tx_' + Date.now(),
           userId: user.id,
           type: 'withdrawal',
           amount: req.amount,
-          balanceAfter: user.balance,
+          currency: currencyLabel,
+          balanceAfter: currentBal,
           description: `Withdrawal Refund (${req.amount} ${currencyLabel}) - Request Rejected`,
           status: 'completed',
           createdAt: new Date().toISOString(),
@@ -1069,9 +1139,11 @@ class Database {
       throw new Error('Your account is currently suspended. Contact support.');
     }
 
-    const eligibleBalance = Math.max(user.balance || 0, user.investment || 0);
-    const isEtbUser = eligibleBalance >= 200 || user.balance >= 200;
+    const eligibleBalanceEtb = Math.max(user.balanceEtb || 0, user.investmentEtb || 0);
+    const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
+    const isEtbUser = eligibleBalanceEtb >= 200 || (user.balanceEtb || 0) >= 200;
     const minRequiredBalance = isEtbUser ? 4000 : 20;
+    const eligibleBalance = isEtbUser ? eligibleBalanceEtb : eligibleBalanceUsdt;
 
     if (eligibleBalance < minRequiredBalance) {
       throw new Error(
@@ -1125,21 +1197,30 @@ class Database {
     const currentUtcCycle = getUtcDailyCycle(now);
     const plan = VIP_PLANS.find(p => p.level === user.vipLevel) || VIP_PLANS[0];
 
-    const eligibleBalance = Math.max(user.balance || 0, user.investment || 0);
-    const isEtbTask = eligibleBalance >= 200 || user.balance >= 200;
+    const eligibleBalanceEtb = Math.max(user.balanceEtb || 0, user.investmentEtb || 0);
+    const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
+    const isEtbTask = eligibleBalanceEtb >= 200 || (user.balanceEtb || 0) >= 200;
     const taskCurrency = isEtbTask ? 'ETB' : 'USDT';
+    const eligibleBalance = isEtbTask ? eligibleBalanceEtb : eligibleBalanceUsdt;
 
     if (user.isGrabActive && user.grabEndTime) {
       if (nowMs >= user.grabEndTime) {
         const profitAmount = Number(((eligibleBalance * plan.dailyProfitPercent) / 100).toFixed(4));
-        const prevBalance = user.balance;
+        const prevBalance = isEtbTask ? (user.balanceEtb || 0) : (user.balance || 0);
 
         user.isGrabActive = false;
-        user.balance = Number((user.balance + profitAmount).toFixed(4));
-        user.investment = Math.max(user.investment || 0, user.balance); // Compound profit!
-        user.todayProfit = Number(((user.todayProfit || 0) + profitAmount).toFixed(4));
-        user.totalProfit = Number(((user.totalProfit || 0) + profitAmount).toFixed(4));
-        const newBalance = user.balance;
+        if (isEtbTask) {
+          user.balanceEtb = Number(((user.balanceEtb || 0) + profitAmount).toFixed(4));
+          user.investmentEtb = Math.max(user.investmentEtb || 0, user.balanceEtb); // Compound profit!
+          user.todayProfitEtb = Number(((user.todayProfitEtb || 0) + profitAmount).toFixed(4));
+          user.totalProfitEtb = Number(((user.totalProfitEtb || 0) + profitAmount).toFixed(4));
+        } else {
+          user.balance = Number(((user.balance || 0) + profitAmount).toFixed(4));
+          user.investment = Math.max(user.investment || 0, user.balance); // Compound profit!
+          user.todayProfit = Number(((user.todayProfit || 0) + profitAmount).toFixed(4));
+          user.totalProfit = Number(((user.totalProfit || 0) + profitAmount).toFixed(4));
+        }
+        const newBalance = isEtbTask ? user.balanceEtb : user.balance;
 
         const grabLog: GrabLog = {
           id: 'grab_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -1164,7 +1245,8 @@ class Database {
           userId: user.id,
           type: 'grab_profit',
           amount: profitAmount,
-          balanceAfter: user.balance,
+          currency: taskCurrency,
+          balanceAfter: newBalance,
           description: `VIP ${user.vipLevel} Daily Compound Profit (${plan.dailyProfitPercent}%) [${taskCurrency}] [UTC Cycle: ${currentUtcCycle}]`,
           status: 'completed',
           createdAt: now.toISOString(),
@@ -1177,9 +1259,15 @@ class Database {
           if (level1User) {
             const l1Bonus = Number((profitAmount * 0.14).toFixed(4));
             if (l1Bonus > 0) {
-              level1User.balance = Number((level1User.balance + l1Bonus).toFixed(4));
-              level1User.todayProfit = Number(((level1User.todayProfit || 0) + l1Bonus).toFixed(4));
-              level1User.totalProfit = Number(((level1User.totalProfit || 0) + l1Bonus).toFixed(4));
+              if (isEtbTask) {
+                level1User.balanceEtb = Number(((level1User.balanceEtb || 0) + l1Bonus).toFixed(4));
+                level1User.todayProfitEtb = Number(((level1User.todayProfitEtb || 0) + l1Bonus).toFixed(4));
+                level1User.totalProfitEtb = Number(((level1User.totalProfitEtb || 0) + l1Bonus).toFixed(4));
+              } else {
+                level1User.balance = Number(((level1User.balance || 0) + l1Bonus).toFixed(4));
+                level1User.todayProfit = Number(((level1User.todayProfit || 0) + l1Bonus).toFixed(4));
+                level1User.totalProfit = Number(((level1User.totalProfit || 0) + l1Bonus).toFixed(4));
+              }
               this.setFirestoreDoc('users', level1User.id, level1User);
               
               this.addTransaction({
@@ -1187,7 +1275,8 @@ class Database {
                 userId: level1User.id,
                 type: 'referral_bonus',
                 amount: l1Bonus,
-                balanceAfter: level1User.balance,
+                currency: taskCurrency,
+                balanceAfter: isEtbTask ? level1User.balanceEtb : level1User.balance,
                 description: `Level 1 Team Grab Bonus (14% from ${user.username}) [${taskCurrency}]`,
                 status: 'completed',
                 createdAt: now.toISOString(),
@@ -1209,9 +1298,15 @@ class Database {
               if (level2User) {
                 const l2Bonus = Number((profitAmount * 0.07).toFixed(4));
                 if (l2Bonus > 0) {
-                  level2User.balance = Number((level2User.balance + l2Bonus).toFixed(4));
-                  level2User.todayProfit = Number(((level2User.todayProfit || 0) + l2Bonus).toFixed(4));
-                  level2User.totalProfit = Number(((level2User.totalProfit || 0) + l2Bonus).toFixed(4));
+                  if (isEtbTask) {
+                    level2User.balanceEtb = Number(((level2User.balanceEtb || 0) + l2Bonus).toFixed(4));
+                    level2User.todayProfitEtb = Number(((level2User.todayProfitEtb || 0) + l2Bonus).toFixed(4));
+                    level2User.totalProfitEtb = Number(((level2User.totalProfitEtb || 0) + l2Bonus).toFixed(4));
+                  } else {
+                    level2User.balance = Number(((level2User.balance || 0) + l2Bonus).toFixed(4));
+                    level2User.todayProfit = Number(((level2User.todayProfit || 0) + l2Bonus).toFixed(4));
+                    level2User.totalProfit = Number(((level2User.totalProfit || 0) + l2Bonus).toFixed(4));
+                  }
                   this.setFirestoreDoc('users', level2User.id, level2User);
 
                   this.addTransaction({
@@ -1219,7 +1314,8 @@ class Database {
                     userId: level2User.id,
                     type: 'referral_bonus',
                     amount: l2Bonus,
-                    balanceAfter: level2User.balance,
+                    currency: taskCurrency,
+                    balanceAfter: isEtbTask ? level2User.balanceEtb : level2User.balance,
                     description: `Level 2 Team Grab Bonus (7% from ${user.username}) [${taskCurrency}]`,
                     status: 'completed',
                     createdAt: now.toISOString(),
@@ -1241,9 +1337,15 @@ class Database {
                   if (level3User) {
                     const l3Bonus = Number((profitAmount * 0.03).toFixed(4));
                     if (l3Bonus > 0) {
-                      level3User.balance = Number((level3User.balance + l3Bonus).toFixed(4));
-                      level3User.todayProfit = Number(((level3User.todayProfit || 0) + l3Bonus).toFixed(4));
-                      level3User.totalProfit = Number(((level3User.totalProfit || 0) + l3Bonus).toFixed(4));
+                      if (isEtbTask) {
+                        level3User.balanceEtb = Number(((level3User.balanceEtb || 0) + l3Bonus).toFixed(4));
+                        level3User.todayProfitEtb = Number(((level3User.todayProfitEtb || 0) + l3Bonus).toFixed(4));
+                        level3User.totalProfitEtb = Number(((level3User.totalProfitEtb || 0) + l3Bonus).toFixed(4));
+                      } else {
+                        level3User.balance = Number(((level3User.balance || 0) + l3Bonus).toFixed(4));
+                        level3User.todayProfit = Number(((level3User.todayProfit || 0) + l3Bonus).toFixed(4));
+                        level3User.totalProfit = Number(((level3User.totalProfit || 0) + l3Bonus).toFixed(4));
+                      }
                       this.setFirestoreDoc('users', level3User.id, level3User);
 
                       this.addTransaction({
@@ -1251,7 +1353,8 @@ class Database {
                         userId: level3User.id,
                         type: 'referral_bonus',
                         amount: l3Bonus,
-                        balanceAfter: level3User.balance,
+                        currency: taskCurrency,
+                        balanceAfter: isEtbTask ? level3User.balanceEtb : level3User.balance,
                         description: `Level 3 Team Grab Bonus (3% from ${user.username}) [${taskCurrency}]`,
                         status: 'completed',
                         createdAt: now.toISOString(),
@@ -1279,8 +1382,7 @@ class Database {
       }
     }
 
-    const isEtbUser = eligibleBalance >= 200 || user.balance >= 200;
-    const minRequiredBalance = isEtbUser ? 4000 : 20;
+    const minRequiredBalance = isEtbTask ? 4000 : 20;
 
     let canGrab = true;
     let cooldownRemainingMs = 0;
@@ -1304,8 +1406,8 @@ class Database {
       remainingSeconds,
       canGrab,
       cooldownRemainingMs,
-      todayProfit: user.todayProfit,
-      totalProfit: user.totalProfit,
+      todayProfit: isEtbTask ? (user.todayProfitEtb || 0) : (user.todayProfit || 0),
+      totalProfit: isEtbTask ? (user.totalProfitEtb || 0) : (user.totalProfit || 0),
       vipPlan: plan,
     };
   }
@@ -1414,17 +1516,23 @@ class Database {
       throw new Error('Adjustment amount must be greater than 0');
     }
 
-    const prevBalance = user.balance;
+    const isEtb = currency === 'ETB';
+    const prevBalance = isEtb ? (user.balanceEtb || 0) : (user.balance || 0);
 
     if (type === 'deduct' && prevBalance < amount) {
-      throw new Error(`Cannot deduct ${amount} ${currency}. User current balance is only ${prevBalance} ${currency}.`);
+      throw new Error(`Cannot deduct ${amount} ${currency}. User current ${currency} balance is only ${prevBalance} ${currency}.`);
     }
 
     const netAdjust = type === 'add' ? amount : -amount;
-    user.balance = Number((user.balance + netAdjust).toFixed(2));
-    user.investment = Math.max(user.investment || 0, user.balance);
+    if (isEtb) {
+      user.balanceEtb = Number(((user.balanceEtb || 0) + netAdjust).toFixed(4));
+      user.investmentEtb = Math.max(user.investmentEtb || 0, user.balanceEtb);
+    } else {
+      user.balance = Number(((user.balance || 0) + netAdjust).toFixed(4));
+      user.investment = Math.max(user.investment || 0, user.balance);
+    }
 
-    const newBalance = user.balance;
+    const newBalance = isEtb ? user.balanceEtb : user.balance;
     const utcTimestamp = new Date().toISOString();
 
     const auditDesc = `Admin [${type.toUpperCase()}] ${amount} ${currency} by ${adminUsername} | Member: ${user.username} (${user.id}) | Prev: ${prevBalance} ${currency} -> New: ${newBalance} ${currency} | Remark: ${reason}`;
@@ -1434,6 +1542,7 @@ class Database {
       userId: user.id,
       type: type === 'add' ? 'admin_add' : 'admin_deduct',
       amount: netAdjust,
+      currency: currency,
       balanceAfter: newBalance,
       description: auditDesc,
       status: 'completed',
@@ -1444,7 +1553,7 @@ class Database {
       id: 'notif_adj_' + Date.now(),
       userId: user.id,
       title: `Balance ${type === 'add' ? 'Credited' : 'Deducted'} (${currency})`,
-      message: `Your balance was ${type === 'add' ? 'increased' : 'decreased'} by ${amount} ${currency} by Admin. Reason: ${reason}. New Balance: ${newBalance} ${currency}.`,
+      message: `Your ${currency} balance was ${type === 'add' ? 'increased' : 'decreased'} by ${amount} ${currency} by Admin. Reason: ${reason}. New ${currency} Balance: ${newBalance} ${currency}.`,
       type: type === 'add' ? 'success' : 'warning',
       isRead: false,
       createdAt: utcTimestamp,

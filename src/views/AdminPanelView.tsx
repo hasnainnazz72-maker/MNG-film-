@@ -550,23 +550,28 @@ export const AdminPanelView: React.FC = () => {
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
             <span className="text-xs text-slate-400 font-medium">Total Approved Deposits</span>
-            <p className="text-2xl font-black text-emerald-400">{dashboardStats.totalApprovedDeposits.toFixed(2)} USDT</p>
+            <p className="text-lg font-black text-emerald-400">{(dashboardStats.totalApprovedDepositsUsdt ?? dashboardStats.totalApprovedDeposits ?? 0).toFixed(2)} USDT</p>
+            <p className="text-xs font-bold text-emerald-300 font-mono">{(dashboardStats.totalApprovedDepositsEtb ?? 0).toFixed(2)} ETB</p>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
             <span className="text-xs text-slate-400 font-medium">Total Approved Withdrawals</span>
-            <p className="text-2xl font-black text-rose-400">{dashboardStats.totalApprovedWithdrawals.toFixed(2)} USDT</p>
+            <p className="text-lg font-black text-rose-400">{(dashboardStats.totalApprovedWithdrawalsUsdt ?? dashboardStats.totalApprovedWithdrawals ?? 0).toFixed(2)} USDT</p>
+            <p className="text-xs font-bold text-rose-300 font-mono">{(dashboardStats.totalApprovedWithdrawalsEtb ?? 0).toFixed(2)} ETB</p>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
             <span className="text-xs text-slate-400 font-medium">User Balance Liability</span>
-            <p className="text-2xl font-black text-white">{dashboardStats.totalUserBalance.toFixed(2)} USDT</p>
+            <p className="text-lg font-black text-white">{(dashboardStats.totalUserBalanceUsdt ?? dashboardStats.totalUserBalance ?? 0).toFixed(2)} USDT</p>
+            <p className="text-xs font-bold text-cyan-300 font-mono">{(dashboardStats.totalUserBalanceEtb ?? 0).toFixed(2)} ETB</p>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
             <span className="text-xs text-slate-400 font-medium">Total Investment Capital</span>
-            <p className="text-2xl font-black text-white">{dashboardStats.totalInvestment.toFixed(2)} USDT</p>
+            <p className="text-lg font-black text-white">{(dashboardStats.totalInvestmentUsdt ?? dashboardStats.totalInvestment ?? 0).toFixed(2)} USDT</p>
+            <p className="text-xs font-bold text-amber-300 font-mono">{(dashboardStats.totalInvestmentEtb ?? 0).toFixed(2)} ETB</p>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
             <span className="text-xs text-slate-400 font-medium">Grab Profits Distributed</span>
-            <p className="text-2xl font-black text-emerald-400">{dashboardStats.totalProfitDistributed.toFixed(2)} USDT</p>
+            <p className="text-lg font-black text-emerald-400">{(dashboardStats.totalProfitDistributedUsdt ?? dashboardStats.totalProfitDistributed ?? 0).toFixed(2)} USDT</p>
+            <p className="text-xs font-bold text-emerald-300 font-mono">{(dashboardStats.totalProfitDistributedEtb ?? 0).toFixed(2)} ETB</p>
           </div>
         </div>
       )}
@@ -613,8 +618,18 @@ export const AdminPanelView: React.FC = () => {
                       <p className="font-bold text-white">{m.username}</p>
                       <p className="text-[10px] text-slate-400 font-mono">{m.countryCode} {m.phone}</p>
                     </td>
-                    <td className="py-3 font-bold text-cyan-400">{m.balance.toFixed(2)} USDT</td>
-                    <td className="py-3 text-slate-200">{m.investment.toFixed(2)} USDT</td>
+                    <td className="py-3 font-bold text-cyan-400">
+                      <div>{(m.balance || 0).toFixed(2)} USDT</div>
+                      {m.balanceEtb !== undefined && (
+                        <div className="text-[10px] text-emerald-400 font-mono">{(m.balanceEtb || 0).toFixed(2)} ETB</div>
+                      )}
+                    </td>
+                    <td className="py-3 text-slate-200">
+                      <div>{(m.investment || 0).toFixed(2)} USDT</div>
+                      {m.investmentEtb !== undefined && (
+                        <div className="text-[10px] text-emerald-400 font-mono">{(m.investmentEtb || 0).toFixed(2)} ETB</div>
+                      )}
+                    </td>
                     <td className="py-3 font-bold text-amber-300">VIP {m.vipLevel}</td>
                     <td className="py-3 font-mono text-slate-400">{m.referralCode}</td>
                     <td className="py-3">
@@ -1017,10 +1032,11 @@ export const AdminPanelView: React.FC = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="text-base font-bold text-white">Adjust Balance for {selectedMember.username}</h3>
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex justify-between items-center text-xs">
-              <span className="text-slate-400">Current Member Balance:</span>
-              <span className="font-extrabold text-cyan-300 font-mono text-sm">
-                {selectedMember.balance.toFixed(2)}
-              </span>
+              <span className="text-slate-400">Current Balances:</span>
+              <div className="text-right font-extrabold font-mono text-xs space-y-0.5">
+                <div className="text-cyan-300">{(selectedMember.balance || 0).toFixed(2)} USDT</div>
+                <div className="text-emerald-300">{(selectedMember.balanceEtb || 0).toFixed(2)} ETB</div>
+              </div>
             </div>
 
             <form onSubmit={handleAdjustBalance} className="space-y-4">

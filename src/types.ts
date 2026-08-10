@@ -6,10 +6,14 @@ export interface User {
   phone: string;
   countryCode: string;
   email: string;
-  balance: number;
-  investment: number;
-  todayProfit: number;
-  totalProfit: number;
+  balance: number;          // USDT Available Balance (strictly USDT)
+  balanceEtb: number;       // ETB Available Balance (strictly ETB)
+  investment: number;       // USDT Investment
+  investmentEtb: number;    // ETB Investment
+  todayProfit: number;      // USDT Today Profit
+  todayProfitEtb: number;   // ETB Today Profit
+  totalProfit: number;      // USDT Total Profit
+  totalProfitEtb: number;   // ETB Total Profit
   vipLevel: VipLevel;
   isGrabActive: boolean;
   lastGrabTimestamp: number | null; // ms timestamp
@@ -92,6 +96,7 @@ export interface Transaction {
   userId: string;
   type: TransactionType;
   amount: number;
+  currency?: 'USDT' | 'ETB';
   balanceAfter: number;
   description: string;
   status: 'completed' | 'pending' | 'failed' | 'rejected';

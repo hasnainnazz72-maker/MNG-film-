@@ -161,9 +161,13 @@ app.post('/api/auth/register', async (req, res) => {
       countryCode,
       email: cleanEmail,
       balance: 0,
+      balanceEtb: 0,
       investment: 0,
+      investmentEtb: 0,
       todayProfit: 0,
+      todayProfitEtb: 0,
       totalProfit: 0,
+      totalProfitEtb: 0,
       vipLevel: 1,
       isGrabActive: false,
       lastGrabTimestamp: null,
@@ -546,6 +550,8 @@ app.get('/api/team/stats', authenticateUserToken, (req: AuthenticatedRequest, re
     vipLevel: u.vipLevel || 1,
     investment: u.investment || 0,
     balance: u.balance || 0,
+    investmentEtb: u.investmentEtb || 0,
+    balanceEtb: u.balanceEtb || 0,
     joinedAt: u.createdAt,
     status: u.status || 'active',
     referralCode: u.referralCode,
@@ -735,28 +741,58 @@ app.get('/api/admin/dashboard', authenticateAdminToken, (req, res) => {
 
   const totalMembers = users.length;
   const activeMembers = users.filter(u => u.status === 'active').length;
-  const totalUserBalance = users.reduce((acc, u) => acc + u.balance, 0);
-  const totalInvestment = users.reduce((acc, u) => acc + u.investment, 0);
+
+  const totalUserBalanceUsdt = users.reduce((acc, u) => acc + (u.balance || 0), 0);
+  const totalUserBalanceEtb = users.reduce((acc, u) => acc + (u.balanceEtb || 0), 0);
+
+  const totalInvestmentUsdt = users.reduce((acc, u) => acc + (u.investment || 0), 0);
+  const totalInvestmentEtb = users.reduce((acc, u) => acc + (u.investmentEtb || 0), 0);
 
   const pendingRechargesCount = recharges.filter(r => r.status === 'pending').length;
-  const totalApprovedDeposits = recharges.filter(r => r.status === 'approved').reduce((acc, r) => acc + r.amount, 0);
+  const totalApprovedDepositsUsdt = recharges
+    .filter(r => r.status === 'approved' && r.currency !== 'ETB' && r.network !== 'ETB_BANK' && r.paymentMethod !== 'ETB_BANK')
+    .reduce((acc, r) => acc + r.amount, 0);
+  const totalApprovedDepositsEtb = recharges
+    .filter(r => r.status === 'approved' && (r.currency === 'ETB' || r.network === 'ETB_BANK' || r.paymentMethod === 'ETB_BANK'))
+    .reduce((acc, r) => acc + r.amount, 0);
 
   const pendingWithdrawalsCount = withdrawals.filter(w => w.status === 'pending').length;
-  const totalApprovedWithdrawals = withdrawals.filter(w => w.status === 'approved').reduce((acc, w) => acc + w.amount, 0);
+  const totalApprovedWithdrawalsUsdt = withdrawals
+    .filter(w => w.status === 'approved' && w.currency !== 'ETB' && w.network !== 'ETB_BANK' && w.paymentMethod !== 'ETB_BANK')
+    .reduce((acc, w) => acc + w.amount, 0);
+  const totalApprovedWithdrawalsEtb = withdrawals
+    .filter(w => w.status === 'approved' && (w.currency === 'ETB' || w.network === 'ETB_BANK' || w.paymentMethod === 'ETB_BANK'))
+    .reduce((acc, w) => acc + w.amount, 0);
 
-  const totalProfitDistributed = transactions.filter(t => t.type === 'grab_profit').reduce((acc, t) => acc + t.amount, 0);
+  const totalProfitDistributedUsdt = transactions
+    .filter(t => t.type === 'grab_profit' && t.currency !== 'ETB')
+    .reduce((acc, t) => acc + t.amount, 0);
+  const totalProfitDistributedEtb = transactions
+    .filter(t => t.type === 'grab_profit' && t.currency === 'ETB')
+    .reduce((acc, t) => acc + t.amount, 0);
+
   const backups = db.listBackups();
 
   res.json({
     totalMembers,
     activeMembers,
-    totalUserBalance,
-    totalInvestment,
+    totalUserBalance: totalUserBalanceUsdt,
+    totalUserBalanceUsdt,
+    totalUserBalanceEtb,
+    totalInvestment: totalInvestmentUsdt,
+    totalInvestmentUsdt,
+    totalInvestmentEtb,
     pendingRechargesCount,
-    totalApprovedDeposits,
+    totalApprovedDeposits: totalApprovedDepositsUsdt,
+    totalApprovedDepositsUsdt,
+    totalApprovedDepositsEtb,
     pendingWithdrawalsCount,
-    totalApprovedWithdrawals,
-    totalProfitDistributed,
+    totalApprovedWithdrawals: totalApprovedWithdrawalsUsdt,
+    totalApprovedWithdrawalsUsdt,
+    totalApprovedWithdrawalsEtb,
+    totalProfitDistributed: totalProfitDistributedUsdt,
+    totalProfitDistributedUsdt,
+    totalProfitDistributedEtb,
     totalTransactions: transactions.length,
     backupCount: backups.length,
     lastBackupAt: backups[0]?.createdAt || null,
