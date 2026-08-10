@@ -46,8 +46,8 @@ export const RechargeView: React.FC<RechargeViewProps> = ({ onNavigate }) => {
     usdtBep20Address: '0xbd63907b714a667f5052c432cdc4ad3dc0d73658',
     usdtTrc20Address: 'TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy',
     etbCbeBankName: 'CBE (Commercial Bank of Ethiopia)',
-    etbCbeAccountName: 'Bonsa Shamsadin',
-    etbCbeAccountNumber: '1000251685715',
+    etbCbeAccountName: 'Yasin haji with out bass/ bok',
+    etbCbeAccountNumber: '1000627790531',
   });
 
   const isEtb = network === 'ETB_BANK';

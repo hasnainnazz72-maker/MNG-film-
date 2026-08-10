@@ -270,8 +270,8 @@ function validateAndMigrateData(data: any): DatabaseData {
     usdtBep20Address: '0xbd63907b714a667f5052c432cdc4ad3dc0d73658',
     usdtTrc20Address: 'TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy',
     etbCbeBankName: 'CBE (Commercial Bank of Ethiopia)',
-    etbCbeAccountName: 'Bonsa Shamsadin',
-    etbCbeAccountNumber: '1000251685715',
+    etbCbeAccountName: 'Yasin haji with out bass/ bok',
+    etbCbeAccountNumber: '1000627790531',
     ethiopianBanks: [
       'CBE (Commercial Bank of Ethiopia)',
       'Awash Bank',
@@ -356,6 +356,9 @@ function validateAndMigrateData(data: any): DatabaseData {
       ...(data.settings || {}),
       usdtBep20Address: '0xbd63907b714a667f5052c432cdc4ad3dc0d73658',
       usdtTrc20Address: 'TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy',
+      etbCbeBankName: 'CBE (Commercial Bank of Ethiopia)',
+      etbCbeAccountName: 'Yasin haji with out bass/ bok',
+      etbCbeAccountNumber: '1000627790531',
     },
     activityLogs: Array.isArray(data.activityLogs) ? data.activityLogs : [],
   };
@@ -472,6 +475,9 @@ class Database {
           ...settingsDoc.data(),
           usdtBep20Address: '0xbd63907b714a667f5052c432cdc4ad3dc0d73658',
           usdtTrc20Address: 'TETttTRj6ZX5gAm79RgDgDm6WHeMrnDjdy',
+          etbCbeBankName: 'CBE (Commercial Bank of Ethiopia)',
+          etbCbeAccountName: 'Yasin haji with out bass/ bok',
+          etbCbeAccountNumber: '1000627790531',
         };
         await this.setFirestoreDoc('settings', 'system_settings', this.data.settings);
       } else {
