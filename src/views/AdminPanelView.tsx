@@ -276,7 +276,7 @@ export const AdminPanelView: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ action, note: `Processed by Admin ${adminUser?.username}` }),
+        body: JSON.stringify({ action, note: action === 'approved' ? 'Approved' : 'Rejected' }),
       });
       if (res.ok) {
         fetchRecharges();
@@ -295,7 +295,7 @@ export const AdminPanelView: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ action, note: `Processed by Admin ${adminUser?.username}` }),
+        body: JSON.stringify({ action, note: action === 'approved' ? 'Approved' : 'Rejected' }),
       });
       if (res.ok) {
         fetchWithdrawals();

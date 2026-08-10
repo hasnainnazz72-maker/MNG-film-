@@ -82,8 +82,8 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
 
   const formatMemberNote = (note: string | undefined | null, status: string) => {
     if (!note) return null;
-    // Hide admin details (admin name, admin username, admin ID) from member view
-    if (/admin|processed|approved/i.test(note)) {
+    let str = note.replace(/hasnainnazz|hasnain/gi, '').trim();
+    if (/admin|processed|approved/i.test(str)) {
       if (status === 'approved' || status === 'completed') {
         return 'Status: Approved';
       }
@@ -92,24 +92,44 @@ export const WalletView: React.FC<WalletViewProps> = ({ onNavigate }) => {
       }
       return 'Status: Pending';
     }
-    return note;
+    return str.replace(/\s*by\s+admin\s*\w*/gi, '').replace(/\s*by\s+admin/gi, '').trim() || null;
   };
 
   const cleanTransactionDescription = (desc: string) => {
     if (!desc) return '';
-    if (/admin|processed by|approved by/i.test(desc)) {
-      if (/^(processed|approved)\s+by\s+admin/i.test(desc) || /^approved\s+by/i.test(desc)) {
+    let str = desc;
+
+    if (/Admin\s*\[(ADD|DEDUCT)\]/i.test(str)) {
+      const isAdd = /\[ADD\]/i.test(str);
+      const amountMatch = str.match(/\[(ADD|DEDUCT)\]\s*([\d\.]+)\s*(\w+)/i);
+      const remarkMatch = str.match(/Remark:\s*(.*)/i);
+
+      const amountStr = amountMatch ? `${amountMatch[2]} ${amountMatch[3]}` : '';
+      const remark = remarkMatch ? remarkMatch[1].trim() : '';
+
+      if (remark) {
+        return `Balance ${isAdd ? 'Credit' : 'Deduction'} (${amountStr}) - Remark: ${remark}`;
+      }
+      return `Balance ${isAdd ? 'Credit' : 'Deduction'} (${amountStr})`;
+    }
+
+    str = str.replace(/hasnainnazz|hasnain/gi, '');
+
+    if (/admin|processed by|approved by/i.test(str)) {
+      if (/^(processed|approved)\s+by\s+admin/i.test(str) || /^approved\s+by/i.test(str)) {
         return 'Status: Approved';
       }
-      return desc
+      return str
         .replace(/processed by admin\s*\w*/gi, 'Status: Approved')
         .replace(/approved by admin\s*\w*/gi, 'Status: Approved')
         .replace(/approved by\s*\w*/gi, 'Status: Approved')
         .replace(/\s*by admin\s*\w*/gi, '')
         .replace(/\s*by admin/gi, '')
+        .replace(/\s*by\s+[a-zA-Z0-9_-]+/gi, '')
+        .replace(/\s+/g, ' ')
         .trim();
     }
-    return desc;
+    return str.replace(/\s*by\s+[a-zA-Z0-9_-]+/gi, '').replace(/\s+/g, ' ').trim();
   };
 
   return (

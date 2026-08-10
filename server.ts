@@ -528,9 +528,52 @@ app.post('/api/wallet/withdraw', authenticateUserToken, async (req: Authenticate
 // History & Transactions
 app.get('/api/wallet/history', authenticateUserToken, (req: AuthenticatedRequest, res) => {
   const userId = req.userId!;
-  const recharges = db.getRecharges().filter(r => r.userId === userId);
-  const withdrawals = db.getWithdrawals().filter(w => w.userId === userId);
-  const transactions = db.getTransactions(userId);
+
+  const sanitizeNote = (note?: string) => {
+    if (!note) return note;
+    let str = note.replace(/hasnainnazz|hasnain/gi, '').trim();
+    if (/processed by admin/i.test(str) || /approved by admin/i.test(str)) {
+      return 'Status: Approved';
+    }
+    str = str.replace(/\s*by\s+admin\s*\w*/gi, '').replace(/\s*by\s+admin/gi, '').trim();
+    return str || 'Approved';
+  };
+
+  const sanitizeDesc = (desc: string) => {
+    if (!desc) return desc;
+    let str = desc;
+    if (/Admin\s*\[(ADD|DEDUCT)\]/i.test(str)) {
+      const isAdd = /\[ADD\]/i.test(str);
+      const amountMatch = str.match(/\[(ADD|DEDUCT)\]\s*([\d\.]+)\s*(\w+)/i);
+      const remarkMatch = str.match(/Remark:\s*(.*)/i);
+      const amountStr = amountMatch ? `${amountMatch[2]} ${amountMatch[3]}` : '';
+      const remark = remarkMatch ? remarkMatch[1].trim() : '';
+      return remark ? `Balance ${isAdd ? 'Credit' : 'Deduction'} (${amountStr}) - Remark: ${remark}` : `Balance ${isAdd ? 'Credit' : 'Deduction'} (${amountStr})`;
+    }
+    return str
+      .replace(/hasnainnazz|hasnain/gi, '')
+      .replace(/processed by admin\s*\w*/gi, 'Status: Approved')
+      .replace(/approved by admin\s*\w*/gi, 'Status: Approved')
+      .replace(/approved by\s*\w*/gi, 'Status: Approved')
+      .replace(/\s*by admin\s*\w*/gi, '')
+      .replace(/\s*by admin/gi, '')
+      .replace(/\s*by\s+[a-zA-Z0-9_-]+/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const recharges = db.getRecharges().filter(r => r.userId === userId).map(r => ({
+    ...r,
+    adminNote: sanitizeNote(r.adminNote),
+  }));
+  const withdrawals = db.getWithdrawals().filter(w => w.userId === userId).map(w => ({
+    ...w,
+    adminNote: sanitizeNote(w.adminNote),
+  }));
+  const transactions = db.getTransactions(userId).map(t => ({
+    ...t,
+    description: sanitizeDesc(t.description),
+  }));
 
   res.json({ recharges, withdrawals, transactions });
 });
@@ -639,7 +682,12 @@ app.get('/api/vip-plans', (req, res) => {
 });
 
 app.get('/api/notifications', authenticateUserToken, (req: AuthenticatedRequest, res) => {
-  res.json(db.getNotifications(req.userId!));
+  const notifs = db.getNotifications(req.userId!).map(n => ({
+    ...n,
+    title: (n.title || '').replace(/hasnainnazz|hasnain/gi, '').trim(),
+    message: (n.message || '').replace(/hasnainnazz|hasnain/gi, '').replace(/\s*by Admin/gi, '').replace(/\s+/g, ' ').trim(),
+  }));
+  res.json(notifs);
 });
 
 app.post('/api/notifications/:id/read', authenticateUserToken, (req: AuthenticatedRequest, res) => {

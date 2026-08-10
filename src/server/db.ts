@@ -1558,6 +1558,7 @@ class Database {
     const utcTimestamp = new Date().toISOString();
 
     const auditDesc = `Admin [${type.toUpperCase()}] ${amount} ${currency} by ${adminUsername} | Member: ${user.username} (${user.id}) | Prev: ${prevBalance} ${currency} -> New: ${newBalance} ${currency} | Remark: ${reason}`;
+    const memberDesc = `Balance ${type === 'add' ? 'Credited' : 'Deducted'} (${amount} ${currency}) - Remark: ${reason}`;
 
     this.addTransaction({
       id: 'tx_adj_' + Date.now(),
@@ -1566,7 +1567,7 @@ class Database {
       amount: netAdjust,
       currency: currency,
       balanceAfter: newBalance,
-      description: auditDesc,
+      description: memberDesc,
       status: 'completed',
       createdAt: utcTimestamp,
     });
@@ -1575,7 +1576,7 @@ class Database {
       id: 'notif_adj_' + Date.now(),
       userId: user.id,
       title: `Balance ${type === 'add' ? 'Credited' : 'Deducted'} (${currency})`,
-      message: `Your ${currency} balance was ${type === 'add' ? 'increased' : 'decreased'} by ${amount} ${currency} by Admin. Reason: ${reason}. New ${currency} Balance: ${newBalance} ${currency}.`,
+      message: `Your ${currency} balance was ${type === 'add' ? 'increased' : 'decreased'} by ${amount} ${currency}. Reason: ${reason}. New ${currency} Balance: ${newBalance} ${currency}.`,
       type: type === 'add' ? 'success' : 'warning',
       isRead: false,
       createdAt: utcTimestamp,
