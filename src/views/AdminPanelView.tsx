@@ -21,6 +21,7 @@ import {
   RotateCw,
   AlertTriangle,
   Lock,
+  Key,
   LogOut,
   Database,
   Download,
@@ -62,6 +63,11 @@ export const AdminPanelView: React.FC = () => {
   const [balanceAdjustCurrency, setBalanceAdjustCurrency] = useState<'ETB' | 'USDT'>('ETB');
   const [balanceAdjustReason, setBalanceAdjustReason] = useState<string>('');
   const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
+
+  // Password Reset State
+  const [passwordResetMember, setPasswordResetMember] = useState<any | null>(null);
+  const [newMemberPassword, setNewMemberPassword] = useState<string>('');
+  const [newMemberFundPassword, setNewMemberFundPassword] = useState<string>('');
 
   const [annTitle, setAnnTitle] = useState<string>('');
   const [annContent, setAnnContent] = useState<string>('');
@@ -339,6 +345,43 @@ export const AdminPanelView: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Error submitting balance adjustment');
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordResetMember) return;
+    if (!newMemberPassword.trim() && !newMemberFundPassword.trim()) {
+      alert('Please enter a new login password or new fund password.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/members/${passwordResetMember.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({
+          newPassword: newMemberPassword.trim() || undefined,
+          newFundPassword: newMemberFundPassword.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Password updated successfully for member ${passwordResetMember.username}`);
+        setPasswordResetMember(null);
+        setNewMemberPassword('');
+        setNewMemberFundPassword('');
+        fetchMembers();
+      } else {
+        alert(data.error || 'Failed to update password');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Error updating password');
     }
   };
 
@@ -643,12 +686,25 @@ export const AdminPanelView: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3 pr-2 text-right">
-                      <button
-                        onClick={() => setSelectedMember(m)}
-                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold text-[11px]"
-                      >
-                        Adjust Balance
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setSelectedMember(m)}
+                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold text-[11px]"
+                        >
+                          Adjust Balance
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPasswordResetMember(m);
+                            setNewMemberPassword('');
+                            setNewMemberFundPassword('');
+                          }}
+                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold text-[11px] flex items-center gap-1"
+                        >
+                          <Key className="w-3 h-3" />
+                          <span>Reset Password</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1134,6 +1190,78 @@ export const AdminPanelView: React.FC = () => {
                   className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black"
                 >
                   Confirm Adjustment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {passwordResetMember && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Key className="w-4 h-4 text-amber-400" />
+                <span>Reset Password for {passwordResetMember.username}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPasswordResetMember(null)}
+                className="text-slate-500 hover:text-white text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Phone Number:</span>
+                <span className="text-white font-mono">{passwordResetMember.countryCode} {passwordResetMember.phone}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Referral Code:</span>
+                <span className="text-amber-300 font-mono">{passwordResetMember.referralCode}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">New Login Password</label>
+                <input
+                  type="text"
+                  value={newMemberPassword}
+                  onChange={(e) => setNewMemberPassword(e.target.value)}
+                  placeholder="Enter new login password (leave blank if unchanged)"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-600 focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">New 6-Digit Fund Password</label>
+                <input
+                  type="text"
+                  value={newMemberFundPassword}
+                  onChange={(e) => setNewMemberFundPassword(e.target.value)}
+                  placeholder="Enter 6-digit fund password (leave blank if unchanged)"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-600 focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setPasswordResetMember(null)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black"
+                >
+                  Save New Password
                 </button>
               </div>
             </form>
