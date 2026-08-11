@@ -28,6 +28,7 @@ import {
   RefreshCw,
   HardDrive,
   Save,
+  Award,
 } from 'lucide-react';
 
 export const AdminPanelView: React.FC = () => {
@@ -41,13 +42,14 @@ export const AdminPanelView: React.FC = () => {
 
   // Active Admin Section Tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'members' | 'recharges' | 'withdrawals' | 'announcements' | 'tickets' | 'settings' | 'logs' | 'backups'
+    'overview' | 'members' | 'recharges' | 'withdrawals' | 'team_rewards' | 'announcements' | 'tickets' | 'settings' | 'logs' | 'backups'
   >('overview');
 
   const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [recharges, setRecharges] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [teamRewardAdminData, setTeamRewardAdminData] = useState<any>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [backups, setBackups] = useState<any[]>([]);
@@ -163,6 +165,21 @@ export const AdminPanelView: React.FC = () => {
     }
   };
 
+  const fetchTeamActivityRewards = async () => {
+    if (!adminToken) return;
+    try {
+      const res = await fetch('/api/admin/team-activity-rewards', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeamRewardAdminData(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchTickets = async () => {
     if (!adminToken) return;
     try {
@@ -213,6 +230,7 @@ export const AdminPanelView: React.FC = () => {
       fetchMembers();
       fetchRecharges();
       fetchWithdrawals();
+      fetchTeamActivityRewards();
       fetchTickets();
       fetchLogs();
       fetchBackups();
@@ -533,6 +551,16 @@ export const AdminPanelView: React.FC = () => {
           }`}
         >
           Withdrawals ({withdrawals.filter((w) => w.status === 'pending').length} Pending)
+        </button>
+        <button
+          onClick={() => setActiveTab('team_rewards')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'team_rewards'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          ⭐ Team Activity Rewards
         </button>
         <button
           onClick={() => setActiveTab('announcements')}
@@ -947,6 +975,118 @@ export const AdminPanelView: React.FC = () => {
                 );
               })
             )}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION: TEAM ACTIVITY REWARDS (READ-ONLY MONITORING VIEW) */}
+      {activeTab === 'team_rewards' && (
+        <div className="space-y-4">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <Award className="w-5 h-5 text-amber-400" />
+                  <span>Team Activity Rewards Overview</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Monitor active member counts (4,000 ETB min. balance + recharge required across Levels A, B, C) and claimed rewards.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={fetchTeamActivityRewards}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Refresh Data</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SUMMARY METRICS */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <p className="text-xs text-slate-400">Total Rewards Distributed</p>
+                <p className="text-xl font-black text-amber-400 font-mono">
+                  {(teamRewardAdminData?.totalRewardsDistributedEtb || 0).toLocaleString()} ETB
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <p className="text-xs text-slate-400">Total Reward Claims</p>
+                <p className="text-xl font-black text-cyan-400 font-mono">
+                  {teamRewardAdminData?.totalClaimsCount || 0} Claims
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <p className="text-xs text-slate-400">Registered Users Monitored</p>
+                <p className="text-xl font-black text-emerald-400 font-mono">
+                  {teamRewardAdminData?.userStats?.length || 0} Users
+                </p>
+              </div>
+            </div>
+
+            {/* USER TEAM ACTIVITY TABLE */}
+            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-900 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">User</th>
+                      <th className="p-3 text-center">Level A Active</th>
+                      <th className="p-3 text-center">Level B Active</th>
+                      <th className="p-3 text-center">Level C Active</th>
+                      <th className="p-3 text-center">Total Active</th>
+                      <th className="p-3 text-right">Reward Claimed</th>
+                      <th className="p-3 text-center">Claims Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-mono">
+                    {teamRewardAdminData?.userStats?.map((u: any) => (
+                      <tr key={u.userId} className="hover:bg-slate-900/50">
+                        <td className="p-3">
+                          <p className="font-bold text-white font-sans">{u.username}</p>
+                          <p className="text-[10px] text-slate-400">{u.phone}</p>
+                        </td>
+                        <td className="p-3 text-center text-cyan-400 font-bold">{u.levelAActive}</td>
+                        <td className="p-3 text-center text-indigo-400 font-bold">{u.levelBActive}</td>
+                        <td className="p-3 text-center text-emerald-400 font-bold">{u.levelCActive}</td>
+                        <td className="p-3 text-center font-black text-amber-300 text-sm">
+                          {u.totalActive}
+                        </td>
+                        <td className="p-3 text-right font-black text-emerald-400">
+                          {u.highestClaimedRewardEtb > 0
+                            ? `${u.highestClaimedRewardEtb.toLocaleString()} ETB`
+                            : '0 ETB'}
+                        </td>
+                        <td className="p-3 text-center">
+                          {u.claimsCount > 0 ? (
+                            <span className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold uppercase font-sans">
+                              {u.claimsCount} Claim{u.claimsCount > 1 ? 's' : ''} ({u.highestClaimedMilestone} Active)
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-500 text-[10px] font-sans">
+                              No Claims
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {(!teamRewardAdminData?.userStats || teamRewardAdminData.userStats.length === 0) && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-slate-500 font-sans">
+                          No team activity data available yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}

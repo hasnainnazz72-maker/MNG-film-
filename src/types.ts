@@ -193,3 +193,43 @@ export interface ActivityLog {
   ip: string;
   createdAt: string;
 }
+
+export interface TeamRewardMilestone {
+  requiredActive: number;
+  rewardEtb: number;
+}
+
+export const TEAM_ACTIVITY_REWARD_TABLE: TeamRewardMilestone[] = [
+  { requiredActive: 22, rewardEtb: 12640 },
+  { requiredActive: 60, rewardEtb: 22240 },
+  { requiredActive: 110, rewardEtb: 35040 },
+  { requiredActive: 310, rewardEtb: 51040 },
+  { requiredActive: 610, rewardEtb: 65440 },
+  { requiredActive: 1000, rewardEtb: 96000 },
+  { requiredActive: 3000, rewardEtb: 240000 },
+  { requiredActive: 6000, rewardEtb: 480000 },
+  { requiredActive: 10000, rewardEtb: 960000 },
+  { requiredActive: 30000, rewardEtb: 1920000 },
+  { requiredActive: 60000, rewardEtb: 3200000 },
+  { requiredActive: 100000, rewardEtb: 4800000 },
+  { requiredActive: 300000, rewardEtb: 8000000 },
+  { requiredActive: 600000, rewardEtb: 17600000 },
+  { requiredActive: 1000000, rewardEtb: 32000000 },
+];
+
+export interface TeamActivityRewardClaim {
+  id: string;
+  userId: string;
+  username: string;
+  userPhone: string;
+  milestone: number;
+  activeCount: number;
+  levelAActive: number;
+  levelBActive: number;
+  levelCActive: number;
+  rewardEtb: number;
+  status: 'completed';
+  createdAt: string;
+  txId: string;
+}
+

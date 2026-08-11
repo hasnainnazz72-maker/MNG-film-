@@ -4,7 +4,7 @@ import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { db, VIP_PLANS } from './src/server/db.js';
-import { NetworkType, PaymentMethodType } from './src/types.js';
+import { NetworkType, PaymentMethodType, TEAM_ACTIVITY_REWARD_TABLE } from './src/types.js';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -664,6 +664,138 @@ app.get('/api/team/stats', authenticateUserToken, (req: AuthenticatedRequest, re
     levelBMembers,
     levelCMembers,
     allMembers: [...levelAMembers, ...levelBMembers, ...levelCMembers],
+  });
+});
+
+// Helper: calculate active members across Level A, B, C for Team Activity Reward
+function computeActiveTeamStats(userId: string) {
+  const user = db.getUserById(userId);
+  if (!user) return { levelAActive: 0, levelBActive: 0, levelCActive: 0, totalActive: 0 };
+
+  const allUsers = db.getUsers();
+  const allRecharges = db.getRecharges();
+
+  const userRefCode = (user.referralCode || '').toUpperCase().trim();
+
+  // Level A (Direct Members)
+  const levelAUsers = allUsers.filter(u => u.referredByCode && u.referredByCode.toUpperCase().trim() === userRefCode);
+  const levelACodes = levelAUsers.map(u => (u.referralCode || '').toUpperCase().trim()).filter(Boolean);
+
+  // Level B (Sub Members)
+  const levelBUsers = allUsers.filter(u => u.referredByCode && levelACodes.includes(u.referredByCode.toUpperCase().trim()));
+  const levelBCodes = levelBUsers.map(u => (u.referralCode || '').toUpperCase().trim()).filter(Boolean);
+
+  // Level C (Tertiary Members)
+  const levelCUsers = allUsers.filter(u => u.referredByCode && levelBCodes.includes(u.referredByCode.toUpperCase().trim()));
+
+  const isActiveMember = (u: any): boolean => {
+    // 1. Must have successfully recharged
+    const hasRecharged = allRecharges.some(r => r.userId === u.id && r.status === 'approved') || (u.investment || 0) > 0 || (u.investmentEtb || 0) > 0;
+    if (!hasRecharged) return false;
+
+    // 2. Current balance must be at least 4,000 ETB
+    const currentBalEtb = (u.balanceEtb || 0) + (u.balance || 0) * 200;
+    return currentBalEtb >= 4000;
+  };
+
+  const levelAActive = levelAUsers.filter(isActiveMember).length;
+  const levelBActive = levelBUsers.filter(isActiveMember).length;
+  const levelCActive = levelCUsers.filter(isActiveMember).length;
+  const totalActive = levelAActive + levelBActive + levelCActive;
+
+  return { levelAActive, levelBActive, levelCActive, totalActive };
+}
+
+// User Endpoint: Get Team Activity Reward statistics and milestone eligibility
+app.get('/api/team-activity-reward/stats', authenticateUserToken, (req: AuthenticatedRequest, res) => {
+  const user = db.getUserById(req.userId!);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const activeStats = computeActiveTeamStats(user.id);
+  const claims = db.getTeamActivityRewardClaimsByUserId(user.id);
+  const claimedMilestones = claims.map(c => c.milestone);
+
+  const milestones = TEAM_ACTIVITY_REWARD_TABLE.map(m => {
+    const isClaimed = claimedMilestones.includes(m.requiredActive);
+    const isEligible = !isClaimed && activeStats.totalActive >= m.requiredActive;
+    return {
+      requiredActive: m.requiredActive,
+      rewardEtb: m.rewardEtb,
+      isClaimed,
+      isEligible,
+      status: isClaimed ? 'claimed' : isEligible ? 'eligible' : 'locked',
+    };
+  });
+
+  const nextMilestoneObj = milestones.find(m => !m.isClaimed && activeStats.totalActive < m.requiredActive) || milestones.find(m => !m.isClaimed) || null;
+
+  res.json({
+    levelAActive: activeStats.levelAActive,
+    levelBActive: activeStats.levelBActive,
+    levelCActive: activeStats.levelCActive,
+    totalActive: activeStats.totalActive,
+    claimedMilestones,
+    claimHistory: claims,
+    milestones,
+    nextMilestone: nextMilestoneObj ? nextMilestoneObj.requiredActive : null,
+    nextRewardEtb: nextMilestoneObj ? nextMilestoneObj.rewardEtb : null,
+  });
+});
+
+// User Endpoint: Claim eligible Team Activity Reward milestone
+app.post('/api/team-activity-reward/claim', authenticateUserToken, (req: AuthenticatedRequest, res) => {
+  const { milestone } = req.body;
+  if (milestone === undefined || milestone === null || typeof milestone !== 'number') {
+    return res.status(400).json({ error: 'Milestone required active member count is required.' });
+  }
+
+  try {
+    const activeStats = computeActiveTeamStats(req.userId!);
+    const result = db.claimTeamActivityReward(req.userId!, milestone, activeStats);
+    res.json({
+      success: true,
+      message: `Successfully claimed ${result.claim.rewardEtb.toLocaleString()} ETB reward!`,
+      claim: result.claim,
+      newBalanceEtb: result.newBalanceEtb,
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to claim team activity reward.' });
+  }
+});
+
+// Admin Endpoint: Read-only Team Activity Rewards view for Admin Panel
+app.get('/api/admin/team-activity-rewards', authenticateAdminToken, (req: AuthenticatedRequest, res) => {
+  const users = db.getUsers();
+  const allClaims = db.getTeamActivityRewardClaims();
+
+  const userStats = users.map(u => {
+    const activeStats = computeActiveTeamStats(u.id);
+    const userClaims = allClaims.filter(c => c.userId === u.id);
+    const highestClaim = userClaims.length > 0 ? userClaims[0] : null;
+
+    return {
+      userId: u.id,
+      username: u.username,
+      phone: `${u.countryCode}${u.phone}`,
+      referralCode: u.referralCode,
+      levelAActive: activeStats.levelAActive,
+      levelBActive: activeStats.levelBActive,
+      levelCActive: activeStats.levelCActive,
+      totalActive: activeStats.totalActive,
+      claimsCount: userClaims.length,
+      userClaims,
+      highestClaimedMilestone: highestClaim ? highestClaim.milestone : null,
+      highestClaimedRewardEtb: highestClaim ? highestClaim.rewardEtb : 0,
+      latestClaimDate: highestClaim ? highestClaim.createdAt : null,
+      latestTxId: highestClaim ? highestClaim.txId : null,
+    };
+  });
+
+  res.json({
+    totalClaimsCount: allClaims.length,
+    totalRewardsDistributedEtb: allClaims.reduce((sum, c) => sum + c.rewardEtb, 0),
+    userStats,
+    allClaims,
   });
 });
 

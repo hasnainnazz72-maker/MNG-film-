@@ -27,7 +27,9 @@ import {
   UserNotification,
   SystemSettings,
   ActivityLog,
-  VipLevel
+  VipLevel,
+  TeamActivityRewardClaim,
+  TEAM_ACTIVITY_REWARD_TABLE
 } from '../types.js';
 
 export { VIP_PLANS };
@@ -78,6 +80,7 @@ interface DatabaseData {
   notifications: UserNotification[];
   settings: SystemSettings;
   activityLogs: ActivityLog[];
+  teamActivityRewardClaims: TeamActivityRewardClaim[];
 }
 
 const DB_DIR = path.join(process.cwd(), 'data');
@@ -318,7 +321,8 @@ function validateAndMigrateData(data: any): DatabaseData {
           ip: '127.0.0.1',
           createdAt: new Date().toISOString(),
         }
-      ]
+      ],
+      teamActivityRewardClaims: []
     };
   }
 
@@ -361,6 +365,7 @@ function validateAndMigrateData(data: any): DatabaseData {
       etbCbeAccountNumber: '1000627790531',
     },
     activityLogs: Array.isArray(data.activityLogs) ? data.activityLogs : [],
+    teamActivityRewardClaims: Array.isArray(data.teamActivityRewardClaims) ? data.teamActivityRewardClaims : [],
   };
 }
 
@@ -565,6 +570,29 @@ class Database {
       } else if (this.data.announcements.length > 0) {
         for (const a of this.data.announcements) {
           await this.setFirestoreDoc('announcements', a.id, a);
+        }
+      }
+
+      // 10. Team Activity Reward Claims
+      const trcSnap = await getDocs(collection(firestoreInstance, 'teamActivityRewardClaims'));
+      if (!trcSnap.empty) {
+        const listMap = new Map<string, TeamActivityRewardClaim>();
+        trcSnap.forEach(d => {
+          const c = d.data() as TeamActivityRewardClaim;
+          listMap.set(c.id, c);
+        });
+        if (Array.isArray(this.data.teamActivityRewardClaims)) {
+          for (const localC of this.data.teamActivityRewardClaims) {
+            if (!listMap.has(localC.id)) {
+              listMap.set(localC.id, localC);
+              this.setFirestoreDoc('teamActivityRewardClaims', localC.id, localC);
+            }
+          }
+        }
+        this.data.teamActivityRewardClaims = Array.from(listMap.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      } else if (Array.isArray(this.data.teamActivityRewardClaims) && this.data.teamActivityRewardClaims.length > 0) {
+        for (const c of this.data.teamActivityRewardClaims) {
+          await this.setFirestoreDoc('teamActivityRewardClaims', c.id, c);
         }
       }
 
@@ -1611,6 +1639,106 @@ class Database {
 
   getActivityLogs(): ActivityLog[] {
     return this.data.activityLogs;
+  }
+
+  getTeamActivityRewardClaims(): TeamActivityRewardClaim[] {
+    if (!Array.isArray(this.data.teamActivityRewardClaims)) {
+      this.data.teamActivityRewardClaims = [];
+    }
+    return this.data.teamActivityRewardClaims;
+  }
+
+  getTeamActivityRewardClaimsByUserId(userId: string): TeamActivityRewardClaim[] {
+    return this.getTeamActivityRewardClaims().filter(c => c.userId === userId);
+  }
+
+  claimTeamActivityReward(
+    userId: string,
+    milestone: number,
+    activeStats: { levelAActive: number; levelBActive: number; levelCActive: number; totalActive: number }
+  ): { claim: TeamActivityRewardClaim; newBalanceEtb: number } {
+    const user = this.getUserById(userId);
+    if (!user) throw new Error('User not found');
+
+    const milestoneConfig = TEAM_ACTIVITY_REWARD_TABLE.find(m => m.requiredActive === milestone);
+    if (!milestoneConfig) {
+      throw new Error('Invalid milestone requirement');
+    }
+
+    if (activeStats.totalActive < milestoneConfig.requiredActive) {
+      throw new Error(`Insufficient active team members. Required: ${milestoneConfig.requiredActive}, Current Total Active: ${activeStats.totalActive}`);
+    }
+
+    // Atomic duplicate check
+    const userClaims = this.getTeamActivityRewardClaimsByUserId(userId);
+    const alreadyClaimed = userClaims.some(c => c.milestone === milestone);
+    if (alreadyClaimed) {
+      throw new Error(`Milestone for ${milestoneConfig.requiredActive} Active Members has already been claimed.`);
+    }
+
+    const rewardAmount = milestoneConfig.rewardEtb;
+    const utcTimestamp = new Date().toISOString();
+    const txId = `TX_TR_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+    // Credit ETB balance in user record
+    user.balanceEtb = Number(((user.balanceEtb || 0) + rewardAmount).toFixed(4));
+    user.investmentEtb = Math.max(user.investmentEtb || 0, user.balanceEtb);
+
+    // Record Transaction in wallet ledger
+    this.addTransaction({
+      id: txId,
+      userId: user.id,
+      type: 'referral_bonus',
+      amount: rewardAmount,
+      currency: 'ETB',
+      balanceAfter: user.balanceEtb,
+      description: `⭐ Team Activity Reward for reaching ${milestoneConfig.requiredActive} Active Team Members`,
+      status: 'completed',
+      createdAt: utcTimestamp,
+    });
+
+    const claim: TeamActivityRewardClaim = {
+      id: `TRC_${user.id}_${milestoneConfig.requiredActive}`,
+      userId: user.id,
+      username: user.username,
+      userPhone: `${user.countryCode}${user.phone}`,
+      milestone: milestoneConfig.requiredActive,
+      activeCount: activeStats.totalActive,
+      levelAActive: activeStats.levelAActive,
+      levelBActive: activeStats.levelBActive,
+      levelCActive: activeStats.levelCActive,
+      rewardEtb: rewardAmount,
+      status: 'completed',
+      createdAt: utcTimestamp,
+      txId: txId,
+    };
+
+    if (!Array.isArray(this.data.teamActivityRewardClaims)) {
+      this.data.teamActivityRewardClaims = [];
+    }
+    this.data.teamActivityRewardClaims.unshift(claim);
+
+    this.addNotification({
+      id: 'notif_tr_' + Date.now(),
+      userId: user.id,
+      title: '⭐ Team Activity Reward Claimed!',
+      message: `Congratulations! You received ${rewardAmount.toLocaleString()} ETB for reaching ${milestoneConfig.requiredActive} Active Team Members.`,
+      type: 'success',
+      isRead: false,
+      createdAt: utcTimestamp,
+    });
+
+    this.logActivity(
+      `USER:${user.id}`,
+      'TEAM_REWARD_CLAIM',
+      `Claimed reward for ${milestoneConfig.requiredActive} active members. Received ${rewardAmount} ETB. TxID: ${txId}`
+    );
+
+    this.saveLocal();
+    this.setFirestoreDoc('users', user.id, user);
+    this.setFirestoreDoc('teamActivityRewardClaims', claim.id, claim);
+
+    return { claim, newBalanceEtb: user.balanceEtb };
   }
 }
 

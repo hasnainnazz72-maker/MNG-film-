@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LANGUAGES, LanguageCode } from '../i18n/translations';
+import { TeamActivityRewardModal } from '../components/TeamActivityRewardModal';
 import {
   User as UserIcon,
   ShieldCheck,
@@ -24,6 +25,7 @@ import {
   X,
   Check,
   Send,
+  Award,
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -41,7 +43,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // PWA and Menu State
+  // PWA, Menu, and Team Activity Reward State
+  const [showTeamRewardModal, setShowTeamRewardModal] = useState<boolean>(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [pwaMessage, setPwaMessage] = useState<string | null>(null);
@@ -267,8 +270,56 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
         </div>
       </div>
 
+      {/* TEAM ACTIVITY REWARD CARD / BANNER (PROMINENT OPTION IN MINE SECTION) */}
+      <div
+        onClick={() => setShowTeamRewardModal(true)}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-amber-950/90 to-slate-950 border border-amber-500/50 p-4 sm:p-5 cursor-pointer hover:border-amber-400 transition-all shadow-xl group"
+      >
+        <div className="flex items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform shrink-0">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-1">
+                <span>⭐ TEAM BONUS ⭐</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 uppercase tracking-wide">
+                TEAM ACTIVITY REWARD
+              </h3>
+              <p className="text-[11px] text-amber-100/80">
+                Earn up to <strong className="text-amber-300 font-mono font-bold">32,000,000 ETB</strong> for Active Team Members
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold group-hover:bg-amber-500 group-hover:text-slate-950 transition-all shrink-0">
+            <span>View</span>
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
       {/* MINE NAVIGATION MENU LIST (REQUIRED BY SPECIFICATION) */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-xl divide-y divide-slate-800/80">
+        {/* ⭐ TEAM ACTIVITY REWARD ⭐ MENU OPTION */}
+        <button
+          onClick={() => setShowTeamRewardModal(true)}
+          className="w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors text-left group bg-gradient-to-r from-red-950/30 via-transparent to-transparent"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500/20 to-red-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
+              <Award className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-amber-300 flex items-center gap-1">
+                <span>⭐ TEAM ACTIVITY REWARD ⭐</span>
+              </p>
+              <p className="text-[10px] text-slate-400">Claim up to 32,000,000 ETB milestone bonuses</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
         {/* Recharge History */}
         <button
           onClick={() => onNavigate('transactions')}
@@ -615,6 +666,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
           </div>
         </div>
       )}
+
+      {/* TEAM ACTIVITY REWARD MODAL */}
+      <TeamActivityRewardModal
+        isOpen={showTeamRewardModal}
+        onClose={() => setShowTeamRewardModal(false)}
+      />
     </div>
   );
 };
