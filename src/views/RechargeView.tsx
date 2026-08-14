@@ -146,8 +146,8 @@ export const RechargeView: React.FC<RechargeViewProps> = ({ onNavigate }) => {
       return;
     }
 
-    if (isEtb && numAmount < 4000) {
-      setError('Minimum deposit amount for ETB Bank Transfer is 4,000 ETB.');
+    if (isEtb && numAmount < 2000) {
+      setError('Minimum deposit amount for ETB Bank Transfer is 2,000 ETB.');
       return;
     }
 
@@ -288,7 +288,7 @@ export const RechargeView: React.FC<RechargeViewProps> = ({ onNavigate }) => {
                 <span>Company Receiving Bank Account (ETB)</span>
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold">
-                Min: 4,000 ETB
+                Min: 2,000 ETB
               </span>
             </div>
 
@@ -382,10 +382,10 @@ export const RechargeView: React.FC<RechargeViewProps> = ({ onNavigate }) => {
             <div className="relative">
               <input
                 type="number"
-                min={isEtb ? 4000 : 20}
+                min={isEtb ? 2000 : 20}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder={isEtb ? 'Min 4,000 ETB' : 'Min 20 USDT'}
+                placeholder={isEtb ? 'Min 2,000 ETB' : 'Min 20 USDT'}
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold placeholder-slate-500 focus:outline-none focus:border-cyan-500"
                 required
               />

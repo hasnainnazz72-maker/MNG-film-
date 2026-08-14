@@ -338,8 +338,8 @@ app.post('/api/wallet/recharge', authenticateUserToken, (req: AuthenticatedReque
 
     const numAmount = Number(amount);
     if (isEtb) {
-      if (!numAmount || numAmount < 4000) {
-        return res.status(400).json({ error: 'Minimum deposit amount for ETB Bank Transfer is 4,000 ETB.' });
+      if (!numAmount || numAmount < 2000) {
+        return res.status(400).json({ error: 'Minimum deposit amount for ETB Bank Transfer is 2,000 ETB.' });
       }
       const refNo = (transactionReference || txid || '').toString().trim();
       if (!refNo || refNo.length < 3) {

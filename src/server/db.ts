@@ -1189,13 +1189,13 @@ class Database {
     const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
 
     const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
-    const hasEligibleEtb = eligibleBalanceEtb >= 4000;
+    const hasEligibleEtb = eligibleBalanceEtb >= 2000;
 
     const isGrabEligible = hasEligibleUsdt || hasEligibleEtb;
 
     if (!isGrabEligible) {
       throw new Error(
-        `Minimum eligible balance of 20 USDT or 4,000 ETB is required to start Grab Order. Current balances: ${eligibleBalanceUsdt.toFixed(2)} USDT / ${eligibleBalanceEtb.toFixed(2)} ETB.`
+        `Minimum eligible balance of 20 USDT or 2,000 ETB is required to start Grab Order. Current balances: ${eligibleBalanceUsdt.toFixed(2)} USDT / ${eligibleBalanceEtb.toFixed(2)} ETB.`
       );
     }
 
@@ -1247,7 +1247,7 @@ class Database {
     const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
 
     const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
-    const hasEligibleEtb = eligibleBalanceEtb >= 4000;
+    const hasEligibleEtb = eligibleBalanceEtb >= 2000;
 
     const isEtbTask = hasEligibleEtb || (!hasEligibleUsdt && eligibleBalanceEtb > 0);
     const taskCurrency = isEtbTask ? 'ETB' : 'USDT';
