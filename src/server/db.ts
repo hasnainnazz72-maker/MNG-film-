@@ -986,10 +986,10 @@ class Database {
       if (user) {
         if (isEtb) {
           user.balanceEtb = Number(((user.balanceEtb || 0) + req.amount).toFixed(4));
-          user.investmentEtb = Math.max(user.investmentEtb || 0, user.balanceEtb);
+          user.investmentEtb = Number(((user.investmentEtb || 0) + req.amount).toFixed(4));
         } else {
           user.balance = Number(((user.balance || 0) + req.amount).toFixed(4));
-          user.investment = Math.max(user.investment || 0, user.balance);
+          user.investment = Number(((user.investment || 0) + req.amount).toFixed(4));
         }
 
         if (user.referredByCode) {
@@ -1111,6 +1111,21 @@ class Database {
 
     if (status === 'approved') {
       if (user) {
+        if (isEtb) {
+          user.investmentEtb = Math.max(0, Number(((user.investmentEtb || 0) - req.amount).toFixed(4)));
+          if ((user.balanceEtb || 0) <= 0) {
+            user.investmentEtb = 0;
+          }
+        } else {
+          user.investment = Math.max(0, Number(((user.investment || 0) - req.amount).toFixed(4)));
+          if ((user.balance || 0) <= 0) {
+            user.investment = 0;
+          }
+        }
+
+        this.checkAndUpdateVipLevel(user.id);
+        this.setFirestoreDoc('users', user.id, user);
+
         this.addNotification({
           id: 'notif_' + Date.now(),
           userId: user.id,
@@ -1185,17 +1200,23 @@ class Database {
       throw new Error('Your account is currently suspended. Contact support.');
     }
 
-    const eligibleBalanceEtb = Math.max(user.balanceEtb || 0, user.investmentEtb || 0);
-    const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
+    const remainingInvestmentEtb = Math.max(0, user.investmentEtb || 0);
+    const remainingInvestmentUsdt = Math.max(0, user.investment || 0);
+    const currentBalanceEtb = Math.max(0, user.balanceEtb || 0);
+    const currentBalanceUsdt = Math.max(0, user.balance || 0);
 
-    const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
-    const hasEligibleEtb = eligibleBalanceEtb >= 2000;
+    // Active eligible investment must be available in remaining investment and balance
+    const eligibleInvestmentEtb = Math.min(currentBalanceEtb, remainingInvestmentEtb);
+    const eligibleInvestmentUsdt = Math.min(currentBalanceUsdt, remainingInvestmentUsdt);
+
+    const hasEligibleUsdt = eligibleInvestmentUsdt >= 20;
+    const hasEligibleEtb = eligibleInvestmentEtb >= 4000;
 
     const isGrabEligible = hasEligibleUsdt || hasEligibleEtb;
 
     if (!isGrabEligible) {
       throw new Error(
-        `Minimum eligible balance of 20 USDT or 2,000 ETB is required to start Grab Order. Current balances: ${eligibleBalanceUsdt.toFixed(2)} USDT / ${eligibleBalanceEtb.toFixed(2)} ETB.`
+        `Minimum eligible remaining investment of 20 USDT or 4,000 ETB is required to start Grab Order. Current remaining investments: ${eligibleInvestmentUsdt.toFixed(2)} USDT / ${eligibleInvestmentEtb.toFixed(2)} ETB.`
       );
     }
 
@@ -1243,15 +1264,20 @@ class Database {
     const currentUtcCycle = getUtcDailyCycle(now);
     const plan = VIP_PLANS.find(p => p.level === user.vipLevel) || VIP_PLANS[0];
 
-    const eligibleBalanceEtb = Math.max(user.balanceEtb || 0, user.investmentEtb || 0);
-    const eligibleBalanceUsdt = Math.max(user.balance || 0, user.investment || 0);
+    const remainingInvestmentEtb = Math.max(0, user.investmentEtb || 0);
+    const remainingInvestmentUsdt = Math.max(0, user.investment || 0);
+    const currentBalanceEtb = Math.max(0, user.balanceEtb || 0);
+    const currentBalanceUsdt = Math.max(0, user.balance || 0);
 
-    const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
-    const hasEligibleEtb = eligibleBalanceEtb >= 2000;
+    const eligibleInvestmentEtb = Math.min(currentBalanceEtb, remainingInvestmentEtb);
+    const eligibleInvestmentUsdt = Math.min(currentBalanceUsdt, remainingInvestmentUsdt);
 
-    const isEtbTask = hasEligibleEtb || (!hasEligibleUsdt && eligibleBalanceEtb > 0);
+    const hasEligibleUsdt = eligibleInvestmentUsdt >= 20;
+    const hasEligibleEtb = eligibleInvestmentEtb >= 4000;
+
+    const isEtbTask = hasEligibleEtb || (!hasEligibleUsdt && eligibleInvestmentEtb > 0);
     const taskCurrency = isEtbTask ? 'ETB' : 'USDT';
-    const eligibleBalance = isEtbTask ? eligibleBalanceEtb : eligibleBalanceUsdt;
+    const eligibleBalance = isEtbTask ? eligibleInvestmentEtb : eligibleInvestmentUsdt;
 
     if (user.isGrabActive && user.grabEndTime) {
       if (nowMs >= user.grabEndTime) {
@@ -1261,12 +1287,12 @@ class Database {
         user.isGrabActive = false;
         if (isEtbTask) {
           user.balanceEtb = Number(((user.balanceEtb || 0) + profitAmount).toFixed(4));
-          user.investmentEtb = Math.max(user.investmentEtb || 0, user.balanceEtb); // Compound profit!
+          user.investmentEtb = Number(((user.investmentEtb || 0) + profitAmount).toFixed(4)); // Compound profit!
           user.todayProfitEtb = Number(((user.todayProfitEtb || 0) + profitAmount).toFixed(4));
           user.totalProfitEtb = Number(((user.totalProfitEtb || 0) + profitAmount).toFixed(4));
         } else {
           user.balance = Number(((user.balance || 0) + profitAmount).toFixed(4));
-          user.investment = Math.max(user.investment || 0, user.balance); // Compound profit!
+          user.investment = Number(((user.investment || 0) + profitAmount).toFixed(4)); // Compound profit!
           user.todayProfit = Number(((user.todayProfit || 0) + profitAmount).toFixed(4));
           user.totalProfit = Number(((user.totalProfit || 0) + profitAmount).toFixed(4));
         }

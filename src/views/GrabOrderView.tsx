@@ -79,18 +79,18 @@ export const GrabOrderView: React.FC<GrabOrderViewProps> = ({ onNavigate }) => {
     }
   };
 
-  const eligibleBalanceUsdt = Math.max(user?.balance || 0, user?.investment || 0);
-  const eligibleBalanceEtb = Math.max(user?.balanceEtb || 0, user?.investmentEtb || 0);
+  const eligibleBalanceUsdt = Math.max(0, Math.min(user?.balance || 0, user?.investment || 0));
+  const eligibleBalanceEtb = Math.max(0, Math.min(user?.balanceEtb || 0, user?.investmentEtb || 0));
 
   const hasEligibleUsdt = eligibleBalanceUsdt >= 20;
-  const hasEligibleEtb = eligibleBalanceEtb >= 2000;
+  const hasEligibleEtb = eligibleBalanceEtb >= 4000;
 
   const isMinBalanceMet = hasEligibleUsdt || hasEligibleEtb;
 
   const isEtbUser = hasEligibleEtb || (!hasEligibleUsdt && eligibleBalanceEtb > 0);
   const activeCurrency = isEtbUser ? 'ETB' : 'USDT';
   const eligibleBalance = isEtbUser ? eligibleBalanceEtb : eligibleBalanceUsdt;
-  const minRequiredBalance = isEtbUser ? 2000 : 20;
+  const minRequiredBalance = isEtbUser ? 4000 : 20;
 
   // Format cooldown remaining ms into HH:MM:SS
   const formatCooldownTime = (ms: number) => {
@@ -136,7 +136,7 @@ export const GrabOrderView: React.FC<GrabOrderViewProps> = ({ onNavigate }) => {
         <div className="flex items-center justify-between font-bold">
           <span className="flex items-center gap-1.5 text-cyan-400">
             <Wallet className="w-4 h-4" />
-            <span>Eligible Balance:</span>
+            <span>Eligible Investment:</span>
           </span>
           <div className="text-right font-mono text-sm">
             <span className="text-white">
@@ -145,9 +145,9 @@ export const GrabOrderView: React.FC<GrabOrderViewProps> = ({ onNavigate }) => {
           </div>
         </div>
         <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-1.5">
-          <span>Minimum Required Balance:</span>
+          <span>Minimum Required Investment:</span>
           <span className={isMinBalanceMet ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-            20 USDT <span className="text-slate-500 font-normal">OR</span> 2,000 ETB
+            20 USDT <span className="text-slate-500 font-normal">OR</span> 4,000 ETB
           </span>
         </div>
       </div>
@@ -242,7 +242,7 @@ export const GrabOrderView: React.FC<GrabOrderViewProps> = ({ onNavigate }) => {
             ) : grabStatus.cooldownRemainingMs > 0 ? (
               <span>Today's Grab Completed (Resets 00:00 UTC)</span>
             ) : !isMinBalanceMet ? (
-              <span>Min Balance Required (20 USDT or 2,000 ETB)</span>
+              <span>Min Investment Required (20 USDT or 4,000 ETB)</span>
             ) : (
               <>
                 <Zap className="w-5 h-5 text-white fill-white" />
