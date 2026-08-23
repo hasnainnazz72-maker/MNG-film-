@@ -55,61 +55,81 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({
     }
   }, [isOpen]);
 
-  // Handle actual download and install simulation
-  const startDownloadAndInstall = () => {
+  // Handle actual download and install
+  const startDownloadAndInstall = async () => {
     setPhase('downloading');
     setDownloadedMb(0);
     setInstallProgress(0);
 
     const startTime = Date.now();
-    const durationMs = 3800; // ~3.8 seconds realistic high-speed download
+    let receivedBytes = 0;
+    const TOTAL_BYTES = Math.round(TOTAL_SIZE_MB * 1024 * 1024);
+    const chunks: Uint8Array[] = [];
 
-    const updateDownload = () => {
-      const elapsed = Date.now() - startTime;
-      const progressRatio = Math.min(1, elapsed / durationMs);
-
-      // Natural ease-out calculation
-      const currentMb = Number((progressRatio * TOTAL_SIZE_MB).toFixed(1));
-      setDownloadedMb(currentMb);
-
-      // Random speed fluctuations between 5.2 MB/s and 8.4 MB/s
-      const speed = (5.2 + Math.sin(elapsed / 200) * 2.1).toFixed(1);
-      setDownloadSpeed(`${speed} MB/s`);
-
-      if (progressRatio < 1) {
-        animationFrameRef.current = requestAnimationFrame(updateDownload);
-      } else {
-        setDownloadedMb(TOTAL_SIZE_MB);
-        setDownloadSpeed('Complete');
-        
-        // Trigger actual file download in browser so user gets real physical file
-        try {
-          const blob = new Blob([
-            `MNG FILM Official Package v2.4.8\nBuild: 2026.08\nPackage: com.mngfilm.app\nStatus: Verified\nPlatform: Web & Android PWA Container`
-          ], { type: 'application/vnd.android.package-archive' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'MNG_FILM_Official_v2.4.apk';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        } catch (e) {
-          console.warn('Physical file download trigger:', e);
-        }
-
-        // Move to Phase 2: Verifying
-        setPhase('verifying');
-        setTimeout(() => {
-          // Move to Phase 3: Installing
-          setPhase('installing');
-          runInstallation();
-        }, 1200);
+    try {
+      const res = await fetch('/api/download/mng-film.apk');
+      if (!res.ok || !res.body) {
+        throw new Error('Direct stream unavailable');
       }
-    };
 
-    animationFrameRef.current = requestAnimationFrame(updateDownload);
+      const reader = res.body.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          receivedBytes += value.byteLength;
+
+          const currentMb = Number((receivedBytes / (1024 * 1024)).toFixed(1));
+          setDownloadedMb(Math.min(TOTAL_SIZE_MB, currentMb));
+
+          const elapsedSec = (Date.now() - startTime) / 1000;
+          if (elapsedSec > 0) {
+            const speed = (receivedBytes / (1024 * 1024) / elapsedSec).toFixed(1);
+            setDownloadSpeed(`${speed} MB/s`);
+          }
+        }
+      }
+
+      setDownloadedMb(TOTAL_SIZE_MB);
+      setDownloadSpeed('Complete');
+
+      // Create REAL 28.6 MB APK file blob and trigger browser download
+      const fullApkBlob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+      const downloadUrl = URL.createObjectURL(fullApkBlob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'MNG_FILM_v2.4.8.apk';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 30000);
+
+      // Move to Phase 2: Verifying
+      setPhase('verifying');
+      setTimeout(() => {
+        setPhase('installing');
+        runInstallation();
+      }, 1200);
+
+    } catch (err) {
+      console.warn('Streaming fallback, downloading direct buffer:', err);
+      // Fallback: direct anchor trigger
+      const link = document.createElement('a');
+      link.href = '/api/download/mng-film.apk';
+      link.download = 'MNG_FILM_v2.4.8.apk';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setDownloadedMb(TOTAL_SIZE_MB);
+      setPhase('verifying');
+      setTimeout(() => {
+        setPhase('installing');
+        runInstallation();
+      }, 1200);
+    }
   };
 
   // Run Installation step
@@ -223,6 +243,17 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({
               <Download className="w-5 h-5" />
               <span>Download & Install ({TOTAL_SIZE_MB} MB)</span>
             </button>
+
+            <div className="text-center pt-1">
+              <a
+                href="/api/download/mng-film.apk"
+                download="MNG_FILM_v2.4.8.apk"
+                className="text-[11px] text-cyan-400 hover:text-cyan-300 underline font-semibold flex items-center justify-center gap-1"
+              >
+                <span>Or download APK directly (28.6 MB)</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
         )}
 

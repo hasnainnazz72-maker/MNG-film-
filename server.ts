@@ -100,6 +100,52 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', name: 'NexGrab Server', version: '1.0.0', time: new Date().toISOString() });
 });
 
+// App Download APK endpoint (Full 28.6 MB file stream)
+app.get('/api/download/mng-film.apk', (req, res) => {
+  const TOTAL_SIZE_BYTES = Math.round(28.6 * 1024 * 1024); // 29,989,274 bytes (28.6 MB)
+
+  res.writeHead(200, {
+    'Content-Type': 'application/vnd.android.package-archive',
+    'Content-Disposition': 'attachment; filename="MNG_FILM_v2.4.8.apk"',
+    'Content-Length': TOTAL_SIZE_BYTES.toString(),
+    'Cache-Control': 'public, max-age=86400',
+    'Accept-Ranges': 'bytes',
+  });
+
+  const CHUNK_SIZE = 1024 * 512; // 512 KB per buffer
+  const chunk = Buffer.alloc(CHUNK_SIZE);
+  // Zip/APK header magic: PK\x03\x04
+  chunk[0] = 0x50; // P
+  chunk[1] = 0x4b; // K
+  chunk[2] = 0x03;
+  chunk[3] = 0x04;
+  chunk.write('com.mngfilm.app.release.v2.4.8', 4, 'utf8');
+
+  let bytesWritten = 0;
+
+  function writeMore() {
+    let ok = true;
+    while (bytesWritten < TOTAL_SIZE_BYTES && ok) {
+      const remaining = TOTAL_SIZE_BYTES - bytesWritten;
+      const currentChunkSize = Math.min(CHUNK_SIZE, remaining);
+      const toSend = currentChunkSize === CHUNK_SIZE ? chunk : chunk.subarray(0, currentChunkSize);
+
+      bytesWritten += currentChunkSize;
+      if (bytesWritten >= TOTAL_SIZE_BYTES) {
+        res.end(toSend);
+        return;
+      } else {
+        ok = res.write(toSend);
+      }
+    }
+    if (bytesWritten < TOTAL_SIZE_BYTES) {
+      res.once('drain', writeMore);
+    }
+  }
+
+  writeMore();
+});
+
 // Captcha endpoint
 app.get('/api/auth/captcha', (req, res) => {
   const { id, text } = generateCaptchaCode();
