@@ -9,8 +9,6 @@ import {
   Zap,
   Crown,
   Star,
-  Download,
-  Smartphone,
 } from 'lucide-react';
 
 import heroBannerImg from '../assets/images/mission_impossible_banner_1785876755897.jpg';
@@ -302,36 +300,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               <ChevronRight className="w-4 h-4" />
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* 📱 APP DOWNLOAD BANNER (DOWNLOAD WITH MB & INSTALL) */}
-      <div
-        onClick={() => window.dispatchEvent(new CustomEvent('trigger-app-download'))}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-slate-900 border border-cyan-500/30 hover:border-cyan-400/60 p-3.5 sm:p-4 shadow-xl cursor-pointer group transition-all"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Download className="w-5 h-5 text-cyan-400 animate-bounce" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h4 className="text-xs sm:text-sm font-black text-white">MNG FILM App Download</h4>
-                <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 font-mono">
-                  28.6 MB
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-xs text-slate-400">
-                High-speed package download with real-time MB counter & auto installation
-              </p>
-            </div>
-          </div>
-
-          <span className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1 flex-shrink-0 shadow-md shadow-cyan-500/20">
-            <span>Install</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </span>
         </div>
       </div>
 
