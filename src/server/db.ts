@@ -29,10 +29,14 @@ import {
   ActivityLog,
   VipLevel,
   TeamActivityRewardClaim,
-  TEAM_ACTIVITY_REWARD_TABLE
+  TEAM_ACTIVITY_REWARD_TABLE,
+  FilmInvestmentPlan,
+  FilmInvestment,
+  FILM_INVESTMENT_PLANS,
+  FilmPlanId
 } from '../types.js';
 
-export { VIP_PLANS };
+export { VIP_PLANS, FILM_INVESTMENT_PLANS };
 
 export function getUtcDailyCycle(date: Date = new Date()): string {
   const year = date.getUTCFullYear();
@@ -81,6 +85,7 @@ interface DatabaseData {
   settings: SystemSettings;
   activityLogs: ActivityLog[];
   teamActivityRewardClaims: TeamActivityRewardClaim[];
+  filmInvestments: FilmInvestment[];
 }
 
 const DB_DIR = path.join(process.cwd(), 'data');
@@ -322,7 +327,8 @@ function validateAndMigrateData(data: any): DatabaseData {
           createdAt: new Date().toISOString(),
         }
       ],
-      teamActivityRewardClaims: []
+      teamActivityRewardClaims: [],
+      filmInvestments: []
     };
   }
 
@@ -366,6 +372,7 @@ function validateAndMigrateData(data: any): DatabaseData {
     },
     activityLogs: Array.isArray(data.activityLogs) ? data.activityLogs : [],
     teamActivityRewardClaims: Array.isArray(data.teamActivityRewardClaims) ? data.teamActivityRewardClaims : [],
+    filmInvestments: Array.isArray(data.filmInvestments) ? data.filmInvestments : [],
   };
 }
 
@@ -593,6 +600,29 @@ class Database {
       } else if (Array.isArray(this.data.teamActivityRewardClaims) && this.data.teamActivityRewardClaims.length > 0) {
         for (const c of this.data.teamActivityRewardClaims) {
           await this.setFirestoreDoc('teamActivityRewardClaims', c.id, c);
+        }
+      }
+
+      // 11. Film Investments
+      const filmSnap = await getDocs(collection(firestoreInstance, 'filmInvestments'));
+      if (!filmSnap.empty) {
+        const listMap = new Map<string, FilmInvestment>();
+        filmSnap.forEach(d => {
+          const inv = d.data() as FilmInvestment;
+          listMap.set(inv.id, inv);
+        });
+        if (Array.isArray(this.data.filmInvestments)) {
+          for (const localInv of this.data.filmInvestments) {
+            if (!listMap.has(localInv.id)) {
+              listMap.set(localInv.id, localInv);
+              this.setFirestoreDoc('filmInvestments', localInv.id, localInv);
+            }
+          }
+        }
+        this.data.filmInvestments = Array.from(listMap.values()).sort((a, b) => (b.startTimeMs || 0) - (a.startTimeMs || 0));
+      } else if (Array.isArray(this.data.filmInvestments) && this.data.filmInvestments.length > 0) {
+        for (const inv of this.data.filmInvestments) {
+          await this.setFirestoreDoc('filmInvestments', inv.id, inv);
         }
       }
 
@@ -1765,6 +1795,279 @@ class Database {
     this.setFirestoreDoc('teamActivityRewardClaims', claim.id, claim);
 
     return { claim, newBalanceEtb: user.balanceEtb };
+  }
+
+  // --- FILM INVESTMENT SYSTEM ---
+
+  /**
+   * Returns all available Film Investment Plans
+   */
+  getFilmPlans(): FilmInvestmentPlan[] {
+    return FILM_INVESTMENT_PLANS;
+  }
+
+  /**
+   * Returns a specific Film Investment Plan by ID
+   */
+  getFilmPlanById(planId: FilmPlanId): FilmInvestmentPlan | undefined {
+    return FILM_INVESTMENT_PLANS.find(p => p.id === planId);
+  }
+
+  /**
+   * Settle and mature completed Film Investments automatically.
+   * Ensures idempotency: will only execute once per investment when duration has elapsed.
+   */
+  settleCompletedFilmInvestments(filterUserId?: string): number {
+    if (!Array.isArray(this.data.filmInvestments)) {
+      this.data.filmInvestments = [];
+      return 0;
+    }
+
+    const nowMs = Date.now();
+    let settledCount = 0;
+
+    for (const inv of this.data.filmInvestments) {
+      if (filterUserId && inv.userId !== filterUserId) {
+        continue;
+      }
+
+      // Check if investment is active, duration is finished, and principal + profit not yet returned
+      if (inv.status === 'active' && !inv.principalReturned && !inv.profitCredited && nowMs >= inv.endTimeMs) {
+        const user = this.data.users.find(u => u.id === inv.userId);
+        if (!user) continue;
+
+        const isEtb = inv.currency === 'ETB';
+        const completionTxId = `TX_FLM_RET_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        const utcCompletedAt = new Date().toISOString();
+
+        // 1. Mark investment as completed
+        inv.status = 'completed';
+        inv.principalReturned = true;
+        inv.profitCredited = true;
+        inv.creditedProfitAmount = inv.totalProfitAmount;
+        inv.completedAt = utcCompletedAt;
+        inv.completionTxId = completionTxId;
+        inv.updatedAt = utcCompletedAt;
+
+        // 2. Return original principal and credit total applicable profit to member balance
+        if (isEtb) {
+          user.balanceEtb = Number(((user.balanceEtb || 0) + inv.totalReturnAmount).toFixed(4));
+          user.totalProfitEtb = Number(((user.totalProfitEtb || 0) + inv.totalProfitAmount).toFixed(4));
+        } else {
+          user.balance = Number(((user.balance || 0) + inv.totalReturnAmount).toFixed(4));
+          user.totalProfit = Number(((user.totalProfit || 0) + inv.totalProfitAmount).toFixed(4));
+        }
+
+        // 3. Record the return transaction in ledger
+        this.addTransaction({
+          id: completionTxId,
+          userId: user.id,
+          type: 'film_investment_return',
+          amount: inv.totalReturnAmount,
+          currency: inv.currency,
+          balanceAfter: isEtb ? user.balanceEtb : user.balance,
+          description: `🎉 Matured ${inv.planName} (${inv.durationDays} Days): Returned Principal (${inv.amount.toLocaleString()} ${inv.currency}) + Total Profit (${inv.totalProfitAmount.toLocaleString()} ${inv.currency})`,
+          status: 'completed',
+          createdAt: utcCompletedAt,
+        });
+
+        // 4. Send notification to member
+        this.addNotification({
+          id: 'notif_flm_ret_' + Date.now(),
+          userId: user.id,
+          title: `🎬 Film Investment Completed!`,
+          message: `Your ${inv.planName} has matured! We have returned your principal of ${inv.amount.toLocaleString()} ${inv.currency} plus ${inv.totalProfitAmount.toLocaleString()} ${inv.currency} profit (Total ${inv.totalReturnAmount.toLocaleString()} ${inv.currency}).`,
+          type: 'success',
+          isRead: false,
+          createdAt: utcCompletedAt,
+        });
+
+        this.logActivity(
+          `USER:${user.id}`,
+          'FILM_INVESTMENT_MATURED',
+          `Film investment ${inv.id} (${inv.planName}) completed. Returned ${inv.totalReturnAmount} ${inv.currency} to member.`
+        );
+
+        this.setFirestoreDoc('users', user.id, user);
+        this.setFirestoreDoc('filmInvestments', inv.id, inv);
+        settledCount++;
+      }
+    }
+
+    if (settledCount > 0) {
+      this.saveLocal();
+    }
+
+    return settledCount;
+  }
+
+  /**
+   * Get all Film Investments for a specific user, automatically checking for matured investments
+   */
+  getUserFilmInvestments(userId: string): FilmInvestment[] {
+    this.settleCompletedFilmInvestments(userId);
+    if (!Array.isArray(this.data.filmInvestments)) {
+      this.data.filmInvestments = [];
+    }
+    return this.data.filmInvestments
+      .filter(inv => inv.userId === userId)
+      .sort((a, b) => (b.startTimeMs || 0) - (a.startTimeMs || 0));
+  }
+
+  /**
+   * Get all Film Investments across platform (for admin)
+   */
+  getAllFilmInvestments(): FilmInvestment[] {
+    this.settleCompletedFilmInvestments();
+    if (!Array.isArray(this.data.filmInvestments)) {
+      this.data.filmInvestments = [];
+    }
+    return [...this.data.filmInvestments].sort((a, b) => (b.startTimeMs || 0) - (a.startTimeMs || 0));
+  }
+
+  /**
+   * Create a new Film Investment
+   */
+  createFilmInvestment(
+    userId: string,
+    planId: FilmPlanId,
+    amount: number,
+    currency: 'ETB' | 'USDT' = 'ETB'
+  ): { investment: FilmInvestment; user: StoredUser } {
+    const user = this.data.users.find(u => u.id === userId);
+    if (!user) {
+      throw new Error('User account not found.');
+    }
+    if (user.status === 'suspended') {
+      throw new Error('Your account is currently suspended. Please contact support.');
+    }
+
+    const plan = this.getFilmPlanById(planId);
+    if (!plan) {
+      throw new Error('Invalid Film Investment plan selected.');
+    }
+
+    const numAmount = Number(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      throw new Error('Please enter a valid investment amount.');
+    }
+
+    const isEtb = currency === 'ETB';
+    const minRequired = isEtb ? plan.minInvestmentEtb : plan.minInvestmentUsdt;
+
+    if (numAmount < minRequired) {
+      throw new Error(
+        `Minimum investment for ${plan.name} is ${minRequired.toLocaleString()} ${currency}.`
+      );
+    }
+
+    // Check available balance
+    if (isEtb) {
+      const currentBal = user.balanceEtb || 0;
+      if (currentBal < numAmount) {
+        throw new Error(
+          `Insufficient ETB balance. You have ${currentBal.toLocaleString()} ETB, but ${numAmount.toLocaleString()} ETB is required.`
+        );
+      }
+    } else {
+      const currentBal = user.balance || 0;
+      if (currentBal < numAmount) {
+        throw new Error(
+          `Insufficient USDT balance. You have ${currentBal.toFixed(2)} USDT, but ${numAmount.toFixed(2)} USDT is required.`
+        );
+      }
+    }
+
+    // Server-side profit calculations
+    const dailyProfitRate = Number((plan.dailyProfitPercent / 100).toFixed(4));
+    const dailyProfitAmount = Number((numAmount * dailyProfitRate).toFixed(4));
+    const totalProfitAmount = Number((numAmount * dailyProfitRate * plan.durationDays).toFixed(4));
+    const totalReturnAmount = Number((numAmount + totalProfitAmount).toFixed(4));
+
+    const startTimeMs = Date.now();
+    const endTimeMs = startTimeMs + plan.durationDays * 24 * 60 * 60 * 1000;
+    const utcNow = new Date(startTimeMs).toISOString();
+    const utcEnd = new Date(endTimeMs).toISOString();
+
+    const invId = `flm_inv_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const txId = `TX_FLM_START_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+    // Deduct investment amount from user balance
+    if (isEtb) {
+      user.balanceEtb = Number(((user.balanceEtb || 0) - numAmount).toFixed(4));
+    } else {
+      user.balance = Number(((user.balance || 0) - numAmount).toFixed(4));
+    }
+
+    // Record the deduction transaction
+    this.addTransaction({
+      id: txId,
+      userId: user.id,
+      type: 'film_investment_start',
+      amount: -numAmount,
+      currency: currency,
+      balanceAfter: isEtb ? user.balanceEtb : user.balance,
+      description: `🎬 Subscribed to ${plan.name}: ${numAmount.toLocaleString()} ${currency} locked for ${plan.durationDays} Days (${plan.dailyProfitPercent}% Daily)`,
+      status: 'completed',
+      createdAt: utcNow,
+    });
+
+    const investment: FilmInvestment = {
+      id: invId,
+      userId: user.id,
+      username: user.username,
+      userPhone: `${user.countryCode}${user.phone}`,
+      planId: plan.id,
+      planName: plan.name,
+      filmTitle: plan.filmTitle,
+      filmPoster: plan.imageUrl,
+      amount: numAmount,
+      currency: currency,
+      durationDays: plan.durationDays,
+      dailyProfitRate: dailyProfitRate,
+      dailyProfitAmount: dailyProfitAmount,
+      totalProfitAmount: totalProfitAmount,
+      totalReturnAmount: totalReturnAmount,
+      startDate: utcNow,
+      startTimeMs: startTimeMs,
+      endDate: utcEnd,
+      endTimeMs: endTimeMs,
+      status: 'active',
+      principalReturned: false,
+      profitCredited: false,
+      creditedProfitAmount: 0,
+      txId: txId,
+      createdAt: utcNow,
+      updatedAt: utcNow,
+    };
+
+    if (!Array.isArray(this.data.filmInvestments)) {
+      this.data.filmInvestments = [];
+    }
+    this.data.filmInvestments.unshift(investment);
+
+    // Send confirmation notification
+    this.addNotification({
+      id: 'notif_flm_start_' + Date.now(),
+      userId: user.id,
+      title: '🎬 Film Investment Started',
+      message: `You successfully subscribed to ${plan.name} with ${numAmount.toLocaleString()} ${currency}. You will earn ${dailyProfitAmount.toLocaleString()} ${currency}/day (Total ${totalReturnAmount.toLocaleString()} ${currency} returned in ${plan.durationDays} days).`,
+      type: 'success',
+      isRead: false,
+      createdAt: utcNow,
+    });
+
+    this.logActivity(
+      `USER:${user.id}`,
+      'FILM_INVESTMENT_START',
+      `Invested ${numAmount} ${currency} in ${plan.name} (${plan.durationDays} days). Expected return: ${totalReturnAmount} ${currency}. InvID: ${invId}`
+    );
+
+    this.saveLocal();
+    this.setFirestoreDoc('users', user.id, user);
+    this.setFirestoreDoc('filmInvestments', investment.id, investment);
+
+    return { investment, user };
   }
 }
 

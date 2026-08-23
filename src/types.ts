@@ -89,7 +89,7 @@ export interface WithdrawalRequest {
   processedAt?: string;
 }
 
-export type TransactionType = 'recharge' | 'withdrawal' | 'grab_profit' | 'referral_bonus' | 'admin_add' | 'admin_deduct' | 'admin_adjustment';
+export type TransactionType = 'recharge' | 'withdrawal' | 'grab_profit' | 'referral_bonus' | 'admin_add' | 'admin_deduct' | 'admin_adjustment' | 'film_investment_start' | 'film_investment_return';
 
 export interface Transaction {
   id: string;
@@ -232,4 +232,78 @@ export interface TeamActivityRewardClaim {
   createdAt: string;
   txId: string;
 }
+
+export type FilmPlanId = 'film_7d' | 'film_30d';
+
+export interface FilmInvestmentPlan {
+  id: FilmPlanId;
+  name: string;
+  filmTitle: string;
+  durationDays: number;
+  dailyProfitPercent: number; // 3.0 for 3%, 3.5 for 3.5%
+  minInvestmentEtb: number;    // 2000 ETB
+  minInvestmentUsdt: number;   // 20 USDT
+  imageUrl: string;
+  description: string;
+  tag: string;
+}
+
+export const FILM_INVESTMENT_PLANS: FilmInvestmentPlan[] = [
+  {
+    id: 'film_7d',
+    name: '7-Day Film Investment',
+    filmTitle: 'Blockbuster Premiere & Global Rights',
+    durationDays: 7,
+    dailyProfitPercent: 3.0,
+    minInvestmentEtb: 2000,
+    minInvestmentUsdt: 20,
+    imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=800&q=80',
+    description: 'Short-cycle film production financing with 3.0% daily box-office dividend yield over 7 days (Total 21% ROI). Principal returned in full on completion.',
+    tag: '7 Days Fast Yield'
+  },
+  {
+    id: 'film_30d',
+    name: '30-Day Film Investment',
+    filmTitle: 'Major Cinematic Release & Box Office Syndicate',
+    durationDays: 30,
+    dailyProfitPercent: 3.5,
+    minInvestmentEtb: 2000,
+    minInvestmentUsdt: 20,
+    imageUrl: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=800&q=80',
+    description: 'High-yield monthly film co-production syndicate offering 3.5% daily return over 30 days (Total 105% ROI). Principal returned in full on completion.',
+    tag: '30 Days High Return'
+  }
+];
+
+export interface FilmInvestment {
+  id: string;
+  userId: string;
+  username: string;
+  userPhone: string;
+  planId: FilmPlanId;
+  planName: string;
+  filmTitle: string;
+  filmPoster: string;
+  amount: number;
+  currency: 'ETB' | 'USDT';
+  durationDays: number;
+  dailyProfitRate: number;        // e.g. 0.03
+  dailyProfitAmount: number;      // amount * rate
+  totalProfitAmount: number;      // amount * rate * durationDays
+  totalReturnAmount: number;      // amount + totalProfitAmount
+  startDate: string;              // ISO String
+  startTimeMs: number;
+  endDate: string;                // ISO String
+  endTimeMs: number;
+  status: 'active' | 'completed' | 'cancelled';
+  principalReturned: boolean;
+  profitCredited: boolean;
+  creditedProfitAmount: number;
+  completedAt?: string;
+  txId: string;                   // Reference start transaction ID
+  completionTxId?: string;       // Reference completion transaction ID
+  createdAt: string;
+  updatedAt?: string;
+}
+
 

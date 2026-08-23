@@ -320,6 +320,68 @@ app.get('/api/grab/history', authenticateUserToken, (req: AuthenticatedRequest, 
   }
 });
 
+// --- FILM INVESTMENT APIS ---
+
+// Get Film Investment Plans
+app.get('/api/film-investments/plans', (req, res) => {
+  try {
+    const plans = db.getFilmPlans();
+    res.json({ success: true, plans });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get User's Film Investments (Active and Completed)
+app.get('/api/film-investments/my', authenticateUserToken, (req: AuthenticatedRequest, res) => {
+  try {
+    const investments = db.getUserFilmInvestments(req.userId!);
+    const user = db.getUserById(req.userId!);
+    const { passwordHash: _, fundPasswordHash: __, ...publicUser } = user || ({} as any);
+
+    res.json({
+      success: true,
+      investments,
+      user: publicUser
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create / Start a Film Investment
+app.post('/api/film-investments/invest', authenticateUserToken, (req: AuthenticatedRequest, res) => {
+  try {
+    const { planId, amount, currency } = req.body;
+    if (!planId || !amount) {
+      return res.status(400).json({ error: 'Plan ID and investment amount are required.' });
+    }
+
+    const selectedCurrency = currency === 'USDT' ? 'USDT' : 'ETB';
+    const result = db.createFilmInvestment(req.userId!, planId, Number(amount), selectedCurrency);
+    const { passwordHash: _, fundPasswordHash: __, ...publicUser } = result.user;
+
+    res.json({
+      success: true,
+      investment: result.investment,
+      user: publicUser,
+      message: `Successfully invested in ${result.investment.planName}!`,
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Admin: Get all Film Investments
+app.get('/api/admin/film-investments', authenticateAdminToken, (req, res) => {
+  try {
+    const investments = db.getAllFilmInvestments();
+    res.json({ success: true, investments });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- WALLET, RECHARGE & WITHDRAWAL APIS ---
 
 // Submit Recharge Request

@@ -29,6 +29,7 @@ import {
   HardDrive,
   Save,
   Award,
+  Film,
 } from 'lucide-react';
 
 export const AdminPanelView: React.FC = () => {
@@ -42,7 +43,7 @@ export const AdminPanelView: React.FC = () => {
 
   // Active Admin Section Tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'members' | 'recharges' | 'withdrawals' | 'team_rewards' | 'announcements' | 'tickets' | 'settings' | 'logs' | 'backups'
+    'overview' | 'members' | 'recharges' | 'withdrawals' | 'team_rewards' | 'film_investments' | 'announcements' | 'tickets' | 'settings' | 'logs' | 'backups'
   >('overview');
 
   const [dashboardStats, setDashboardStats] = useState<any>(null);
@@ -50,6 +51,7 @@ export const AdminPanelView: React.FC = () => {
   const [recharges, setRecharges] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [teamRewardAdminData, setTeamRewardAdminData] = useState<any>(null);
+  const [adminFilmInvestments, setAdminFilmInvestments] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [backups, setBackups] = useState<any[]>([]);
@@ -180,6 +182,23 @@ export const AdminPanelView: React.FC = () => {
     }
   };
 
+  const fetchAdminFilmInvestments = async () => {
+    if (!adminToken) return;
+    try {
+      const res = await fetch('/api/admin/film-investments', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.investments) {
+          setAdminFilmInvestments(data.investments);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchTickets = async () => {
     if (!adminToken) return;
     try {
@@ -231,6 +250,7 @@ export const AdminPanelView: React.FC = () => {
       fetchRecharges();
       fetchWithdrawals();
       fetchTeamActivityRewards();
+      fetchAdminFilmInvestments();
       fetchTickets();
       fetchLogs();
       fetchBackups();
@@ -561,6 +581,17 @@ export const AdminPanelView: React.FC = () => {
           }`}
         >
           ⭐ Team Activity Rewards
+        </button>
+        <button
+          onClick={() => setActiveTab('film_investments')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            activeTab === 'film_investments'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <Film className="w-3.5 h-3.5" />
+          <span>Film Investments ({adminFilmInvestments.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('announcements')}
@@ -1087,6 +1118,92 @@ export const AdminPanelView: React.FC = () => {
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION: FILM INVESTMENTS OVERVIEW */}
+      {activeTab === 'film_investments' && (
+        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Film className="w-5 h-5 text-amber-400" />
+                <span>Film Investments Monitoring</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Total Investments: {adminFilmInvestments.length} | Active: {adminFilmInvestments.filter((i) => i.status === 'active').length} | Completed: {adminFilmInvestments.filter((i) => i.status === 'completed').length}
+              </p>
+            </div>
+            <button
+              onClick={fetchAdminFilmInvestments}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 self-start"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-900/90 text-slate-400 font-bold border-b border-slate-800 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-3">Member</th>
+                  <th className="p-3">Plan / Film</th>
+                  <th className="p-3 text-right">Principal</th>
+                  <th className="p-3 text-right">Daily Yield</th>
+                  <th className="p-3 text-right">Total Expected</th>
+                  <th className="p-3 text-center">Status</th>
+                  <th className="p-3 text-right">Timeline</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {adminFilmInvestments.map((inv) => (
+                  <tr key={inv.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="p-3">
+                      <p className="font-bold text-white font-sans">{inv.username || 'Member'}</p>
+                      <p className="text-[10px] text-slate-400">{inv.userPhone}</p>
+                    </td>
+                    <td className="p-3">
+                      <span className="font-bold text-cyan-400">{inv.planName}</span>
+                      <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{inv.filmTitle}</p>
+                    </td>
+                    <td className="p-3 text-right font-bold text-white font-sans">
+                      {inv.amount.toLocaleString()} {inv.currency}
+                    </td>
+                    <td className="p-3 text-right font-bold text-emerald-400 font-sans">
+                      +{inv.dailyProfitAmount.toLocaleString()} {inv.currency}/d ({inv.dailyProfitRate * 100}%)
+                    </td>
+                    <td className="p-3 text-right font-black text-amber-300 font-sans">
+                      {inv.totalReturnAmount.toLocaleString()} {inv.currency}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase ${
+                          inv.status === 'active'
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        }`}
+                      >
+                        {inv.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right text-[10px] text-slate-400">
+                      <div>Start: {formatUtcDateTime(inv.startDate)}</div>
+                      <div>End: {formatUtcDateTime(inv.endDate)}</div>
+                    </td>
+                  </tr>
+                ))}
+
+                {adminFilmInvestments.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-500 font-sans">
+                      No film investment records found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

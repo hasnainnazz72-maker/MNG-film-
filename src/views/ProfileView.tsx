@@ -26,6 +26,8 @@ import {
   Check,
   Send,
   Award,
+  Film,
+  Download,
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -60,18 +62,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   }, []);
 
   const handleInstallPWA = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      if (choiceResult.outcome === 'accepted') {
-        setPwaMessage('MNG FILM PWA application installed successfully!');
-      }
-      setDeferredPrompt(null);
-    } else {
-      setPwaMessage(
-        'To install MNG FILM on your device:\n1. Open browser menu (⋮ or Share button)\n2. Tap "Add to Home screen" or "Install App"'
-      );
-    }
+    setShowMenuDrawer(false);
+    window.dispatchEvent(new CustomEvent('trigger-app-download'));
   };
 
   const handleShareApp = () => {
@@ -320,6 +312,25 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
           <ChevronRight className="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
         </button>
 
+        {/* 🎬 FILM SYNDICATE INVESTMENT OPTION */}
+        <button
+          onClick={() => onNavigate('task')}
+          className="w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors text-left group bg-gradient-to-r from-cyan-950/20 via-transparent to-transparent"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
+              <Film className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-cyan-300 flex items-center gap-1">
+                <span>🎬 FILM SYNDICATE INVESTMENT</span>
+              </p>
+              <p className="text-[10px] text-slate-400">7-Day (3% Daily) & 30-Day (3.5% Daily) Plans</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
         {/* Recharge History */}
         <button
           onClick={() => onNavigate('transactions')}
@@ -369,6 +380,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+        </button>
+
+        {/* App Download (28.6 MB) */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('trigger-app-download'))}
+          className="w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors text-left group bg-gradient-to-r from-blue-950/20 via-transparent to-transparent"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
+              <Download className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-cyan-300 flex items-center gap-1.5">
+                <span>App Download (28.6 MB)</span>
+                <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-400/40 text-[9px] text-cyan-300 font-bold">APK / PWA</span>
+              </p>
+              <p className="text-[10px] text-slate-400">Download package with MB progress and install to phone</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
         </button>
 
         {/* Security Center & Password Toggle */}

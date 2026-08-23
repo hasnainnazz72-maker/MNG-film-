@@ -9,6 +9,8 @@ import {
   Zap,
   Crown,
   Star,
+  Download,
+  Smartphone,
 } from 'lucide-react';
 
 import heroBannerImg from '../assets/images/mission_impossible_banner_1785876755897.jpg';
@@ -262,6 +264,75 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
           </div>
           <span className="text-[10px] sm:text-xs font-bold text-slate-200">VIP Plans</span>
         </button>
+      </div>
+
+      {/* 🎬 FEATURED FILM INVESTMENT SYNDICATE BANNER */}
+      <div
+        onClick={() => onNavigate('task')}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-cyan-500/30 hover:border-cyan-400/60 p-4 sm:p-5 shadow-2xl cursor-pointer group transition-all duration-300"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-cyan-500/20 transition-all" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 p-0.5 shadow-lg shadow-cyan-500/30 flex-shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                <Film className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-[9px] sm:text-[10px] font-black text-cyan-300 uppercase tracking-widest">
+                  New Feature
+                </span>
+                <span className="text-[10px] text-amber-400 font-bold">3.0% – 3.5% Daily Profit</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
+                Film Syndicate Investment Plans
+              </h3>
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                Lock for 7 or 30 days • Automatic principal & daily profit return upon maturity
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <span className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-xs uppercase tracking-wider group-hover:shadow-lg group-hover:shadow-cyan-500/30 transition-all flex items-center gap-1">
+              <span>Explore Plans</span>
+              <ChevronRight className="w-4 h-4" />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 📱 APP DOWNLOAD BANNER (DOWNLOAD WITH MB & INSTALL) */}
+      <div
+        onClick={() => window.dispatchEvent(new CustomEvent('trigger-app-download'))}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-slate-900 border border-cyan-500/30 hover:border-cyan-400/60 p-3.5 sm:p-4 shadow-xl cursor-pointer group transition-all"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform flex-shrink-0">
+              <Download className="w-5 h-5 text-cyan-400 animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs sm:text-sm font-black text-white">MNG FILM App Download</h4>
+                <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 font-mono">
+                  28.6 MB
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-xs text-slate-400">
+                High-speed package download with real-time MB counter & auto installation
+              </p>
+            </div>
+          </div>
+
+          <span className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center gap-1 flex-shrink-0 shadow-md shadow-cyan-500/20">
+            <span>Install</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
       </div>
 
       {/* POPULAR MOVIES SECTION MATCHING FLEX REFERENCE */}

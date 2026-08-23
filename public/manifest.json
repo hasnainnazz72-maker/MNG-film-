@@ -1,21 +1,32 @@
 {
   "short_name": "MNG FILM",
-  "name": "MNG FILM Box Office Platform",
+  "name": "MNG FILM",
+  "description": "MNG FILM South Africa Official Platform for Film Investment & Box Office Yield Grabbing",
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=192&auto=format&fit=crop",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=512&auto=format&fit=crop",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "background_color": "#020617",
   "theme_color": "#020617",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "categories": ["finance", "entertainment", "business"]
 }
