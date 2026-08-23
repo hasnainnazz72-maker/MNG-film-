@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { formatUtcTime } from '../lib/dateUtils';
 import { Bell, Shield, User as UserIcon, LogOut, Check, X, ShieldAlert } from 'lucide-react';
-import { PwaInstallPrompt } from './PwaInstallPrompt';
 
 interface HeaderProps {
   onNavigate: (view: string) => void;
@@ -75,9 +74,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
 
         {/* Right Action Icons */}
         <div className="flex items-center gap-2">
-          {/* PWA Install Button */}
-          <PwaInstallPrompt />
-
           {/* Security Shield Button */}
           <button
             onClick={() => onNavigate('profile')}

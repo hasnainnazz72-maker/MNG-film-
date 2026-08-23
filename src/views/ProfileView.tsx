@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LANGUAGES, LanguageCode } from '../i18n/translations';
 import { TeamActivityRewardModal } from '../components/TeamActivityRewardModal';
+import { AppDownloadModal } from '../components/AppDownloadModal';
 import {
   User as UserIcon,
   ShieldCheck,
@@ -48,6 +49,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   // PWA, Menu, and Team Activity Reward State
   const [showTeamRewardModal, setShowTeamRewardModal] = useState<boolean>(false);
   const [showMenuDrawer, setShowMenuDrawer] = useState<boolean>(false);
+  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [pwaMessage, setPwaMessage] = useState<string | null>(null);
   const [showLangModal, setShowLangModal] = useState<boolean>(false);
@@ -63,7 +65,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
 
   const handleInstallPWA = async () => {
     setShowMenuDrawer(false);
-    window.dispatchEvent(new CustomEvent('trigger-app-download'));
+    setShowDownloadModal(true);
   };
 
   const handleShareApp = () => {
@@ -384,7 +386,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
 
         {/* App Download (28.6 MB) */}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('trigger-app-download'))}
+          onClick={() => setShowDownloadModal(true)}
           className="w-full p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors text-left group bg-gradient-to-r from-blue-950/20 via-transparent to-transparent"
         >
           <div className="flex items-center gap-3">
@@ -702,6 +704,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
       <TeamActivityRewardModal
         isOpen={showTeamRewardModal}
         onClose={() => setShowTeamRewardModal(false)}
+      />
+
+      {/* APP DOWNLOAD & INSTALLATION MODAL (28.6 MB) */}
+      <AppDownloadModal
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        deferredPrompt={deferredPrompt}
       />
     </div>
   );
